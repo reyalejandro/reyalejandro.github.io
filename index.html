@@ -1,0 +1,726 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alejandro Rey, DevOps y QA Automation</title>
+<meta name="description" content="Alejandro Rey, DevOps y QA Automation Engineer en Buenos Aires. Pipelines CI/CD para banca, pruebas automatizadas y un ecommerce propio con Astro, Medusa y PostgreSQL.">
+<meta property="og:title" content="Alejandro Rey, DevOps y QA Automation">
+<meta property="og:description" content="Pipelines CI/CD para banca, pruebas automatizadas y un ecommerce propio con Astro, Medusa y PostgreSQL.">
+<meta property="og:url" content="https://reyalejandro.github.io/resume/">
+<meta property="og:image" content="https://reyalejandro.github.io/resume/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://reyalejandro.github.io/resume/">
+<meta property="og:type" content="profile">
+<meta name="theme-color" content="#EEF1F4">
+<link rel="icon" data-icono href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230E1726'/%3E%3Cpath d='M9 17l4.5 4.5L23 11' fill='none' stroke='%23FFC23D' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Person","name":"Alejandro Rey","jobTitle":"DevOps y QA Automation Engineer","address":{"@type":"PostalAddress","addressLocality":"Buenos Aires","addressCountry":"AR"},"sameAs":["https://www.linkedin.com/in/alejandro-joaquin-rey/"],"knowsLanguage":["es","en"]}
+</script>
+<style>
+:root{
+  --niebla:#EEF1F4; --papel:#FFFFFF; --tinta:#0E1726; --pizarra:#556172; --linea:#D6DCE4;
+  --sodio:#FFC23D; --sodio-suave:#FFE7A8; --verde:#11704B;
+  --sans:"Archivo",ui-sans-serif,system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+  --ease:cubic-bezier(.22,.8,.2,1); --ease-in-out:cubic-bezier(.65,0,.35,1);
+  --r-s:6px; --r-m:12px; --r-l:20px;
+  /* Superficies sobre tinta (corrida, código, cierre) */
+  --tinta-2:#1A2638; --tinta-3:#26344B; --tinta-borde:#2C3B54; --bruma:#A9B4C4; --bruma-clara:#C9D2DE; --apagado:#8593A8; --verde-claro:#5BD39F; --tinta-texto:#E8EDF4;
+  /* Resorte (rebote .18, 450 ms percibidos; asienta en 600 ms), calculado como el modelo de SwiftUI que usa anime.js */
+  --resorte:linear(0, 0.03, 0.1037, 0.2018, 0.3101, 0.4191, 0.5223, 0.6161, 0.6985, 0.7689, 0.8275, 0.8752, 0.9132, 0.9427, 0.9651, 0.9816, 0.9933, 1.0013, 1.0064, 1.0094, 1.0108, 1.0111, 1.0107, 1.0098, 1.0087, 1.0075, 1.0063, 1.0051, 1.0041, 1.0032, 1.0025, 1.0018, 1);
+  --resorte-t:600ms;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;scrollbar-color:#B9C3CF var(--niebla);accent-color:var(--tinta)}
+body{margin:0;background:var(--niebla);color:var(--tinta);font:400 1.0625rem/1.6 var(--sans);font-variation-settings:"wdth" 100;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+::selection{background:var(--sodio);color:var(--tinta)}
+a{color:inherit;text-decoration-thickness:1.5px;text-underline-offset:.22em}
+a:hover{text-decoration-color:var(--sodio)}
+:focus-visible{outline:3px solid var(--tinta);outline-offset:3px;border-radius:4px}
+.envoltura{width:min(1120px,100% - 40px);margin-inline:auto}
+.saltar{position:absolute;left:-999px;top:12px;background:var(--tinta);color:var(--papel);padding:10px 16px;border-radius:var(--r-s);z-index:10}
+.saltar:focus{left:12px}
+
+/* Cabecera fija */
+.barra{position:sticky;top:0;z-index:5;background:rgb(238 241 244 / .78);-webkit-backdrop-filter:blur(14px) saturate(160%);backdrop-filter:blur(14px) saturate(160%)}
+/* Borde que se desenfoca de a poco en vez de una línea dura */
+.barra::after{content:"";position:absolute;left:0;right:0;top:100%;height:22px;pointer-events:none;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);-webkit-mask-image:linear-gradient(#000,transparent);mask-image:linear-gradient(#000,transparent)}
+.barra .envoltura{display:flex;align-items:center;gap:24px;min-height:60px}
+.barra .marca{font-weight:800;font-variation-settings:"wdth" 118;letter-spacing:-.01em;text-decoration:none}
+.barra nav{margin-left:auto;display:flex;gap:4px}
+.barra nav a{text-decoration:none;font-size:.9375rem;font-weight:500;padding:8px 12px;border-radius:var(--r-s);color:var(--pizarra)}
+.barra nav a:hover,.barra nav a[aria-current="true"]{color:var(--tinta);background:rgb(14 23 38 / .05)}
+@media (max-width:760px){.barra{position:static}.barra nav{display:none}}
+
+/* Hero */
+.hero{padding:64px 0 56px;display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center}
+.identidad{display:grid;grid-template-columns:auto 1fr;gap:20px 24px;align-items:center}
+.foto{width:96px;height:96px;border-radius:50%;object-fit:cover;filter:grayscale(1) contrast(1.08);transition:filter .28s var(--ease);box-shadow:0 0 0 4px var(--papel),0 10px 24px -12px rgb(14 23 38 / .45)}
+@media (hover:hover) and (pointer:fine){.foto:hover{filter:none}}
+.disponible{grid-column:1/-1;margin:2px 0 0;font-size:.9375rem;color:var(--pizarra)}
+@keyframes subir{from{clip-path:inset(0 0 100% 0);transform:translateY(.35em)}to{clip-path:inset(0 0 -.2em 0);transform:none}}
+h1{animation:subir .7s cubic-bezier(.16,1,.3,1) both;grid-column:1/-1;margin:8px 0 0;font-weight:850;font-variation-settings:"wdth" 125;font-size:clamp(3rem,7.4vw,6rem);line-height:.92;letter-spacing:-.035em}
+.rol{grid-column:1/-1;margin:0;font-size:clamp(1.25rem,2.2vw,1.6rem);font-weight:600;font-variation-settings:"wdth" 108;letter-spacing:-.01em}
+.bajada{grid-column:1/-1;margin:4px 0 0;max-width:34em;color:var(--pizarra);font-size:1.125rem}
+.acciones{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:12px;margin-top:12px}
+.boton{display:inline-flex;align-items:center;gap:10px;min-height:48px;padding:0 20px;border-radius:999px;font:600 1rem var(--sans);text-decoration:none;cursor:pointer;border:0;transition:transform .12s var(--ease),background-color .2s var(--ease),box-shadow .2s var(--ease)}
+.boton:active{transform:scale(.97);transition-duration:.1s}
+.boton:not(:active){transition:transform var(--resorte-t) var(--resorte),background-color .2s var(--ease),box-shadow .2s var(--ease)}
+.boton svg{width:18px;height:18px;flex:none}
+.boton.principal{background:var(--tinta);color:var(--papel);box-shadow:0 10px 22px -12px rgb(14 23 38 / .7)}
+.boton.principal:hover{background:#1B2940}
+.boton.secundario{background:var(--papel);color:var(--tinta);box-shadow:inset 0 0 0 1.5px var(--linea)}
+.boton.secundario:hover{box-shadow:inset 0 0 0 1.5px var(--tinta)}
+.boton.terciario{background:none;color:var(--tinta);padding:0 12px}
+.boton.terciario:hover{background:rgb(14 23 38 / .05)}
+.copiado{font-size:.9375rem;color:var(--verde);min-height:1.6em;grid-column:1/-1;margin:0}
+
+/* Corrida del pipeline */
+.corrida{margin:0;background:var(--tinta);color:var(--tinta-texto);border-radius:var(--r-l);padding:22px 22px 18px;box-shadow:0 30px 60px -30px rgb(14 23 38 / .55);font-family:var(--mono);font-size:.875rem;position:relative;overflow:hidden}
+.rastro{position:absolute;inset:0;border-radius:inherit;padding:1.5px;pointer-events:none;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);opacity:0;transition:opacity .5s var(--ease)}
+.rastro::before{content:"";position:absolute;width:110px;aspect-ratio:1;background:radial-gradient(closest-side,var(--sodio),transparent);offset-path:rect(0 auto auto 0 round 20px);offset-distance:0%}
+@supports (offset-path:rect(0 auto auto 0)){.corrida[data-corriendo] .rastro{opacity:1}}
+.corrida[data-corriendo] .rastro::before{animation:recorrer 2.6s linear infinite}
+@keyframes recorrer{to{offset-distance:100%}}
+.log .t{font-variant-numeric:tabular-nums}
+.corrida header{display:flex;align-items:center;gap:10px;margin-bottom:18px;font-size:.8125rem;color:var(--bruma)}
+.corrida header b{color:#FFFFFF;font-weight:500}
+.corrida header>*{white-space:nowrap}
+@media (max-width:560px){.corrida header>span:first-child{display:none}.corrida header{gap:8px}.repetir{padding:4px 2px}}
+.duracion{margin-left:auto;color:var(--bruma);font-variant-numeric:tabular-nums}
+.duracion number-flow{--number-flow-mask-height:.15em}
+.estado-run{display:inline-flex;align-items:center;gap:8px;padding:4px 10px;border-radius:999px;background:rgb(255 194 61 / .14);color:var(--sodio)}
+.estado-run[data-ok]{background:rgb(23 133 90 / .22);color:var(--verde-claro)}
+.repetir{font:inherit;color:var(--bruma);background:none;border:0;padding:4px 6px;border-radius:var(--r-s);cursor:pointer;opacity:0;pointer-events:none;transition:opacity .2s var(--ease),color .15s var(--ease)}
+.repetir[data-listo]{opacity:1;pointer-events:auto}
+.repetir:hover{color:#FFFFFF}
+.repetir:focus-visible{outline-color:var(--sodio)}
+.etapas{display:grid;grid-template-columns:repeat(5,1fr);gap:0;margin:0 0 18px;padding:0;list-style:none;position:relative}
+.etapas::before{content:"";position:absolute;left:10%;right:10%;top:15px;height:2px;background:var(--tinta-3)}
+.etapas .avance{position:absolute;left:10%;top:15px;height:2px;width:80%;background:var(--sodio);transform-origin:left;transform:scaleX(0)}
+.etapa{display:grid;justify-items:center;gap:8px;position:relative;font-size:.75rem;color:var(--bruma);text-align:center}
+.nodo{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--tinta-2);box-shadow:inset 0 0 0 2px var(--tinta-borde);transition:background-color .3s var(--ease),box-shadow .3s var(--ease)}
+.nodo svg{width:16px;height:16px;stroke:#0E1726;stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:24;stroke-dashoffset:24}
+.etapa[data-paso] .nodo{background:var(--sodio);box-shadow:none}
+.etapa[data-paso] .nodo svg{stroke-dashoffset:0;transition:stroke-dashoffset .25s var(--ease) .05s}
+.etapa[data-paso]{color:#FFFFFF}
+@media (min-width:560px){.etapa{font-size:.8125rem}}
+.log{margin:0;padding:14px 0 0;border-top:1px solid #23314A;list-style:none;display:grid;gap:7px;min-height:12.5em}
+.log li{display:grid;grid-template-columns:4.2em 1fr;gap:10px;opacity:0;transform:translateY(4px)}
+.log li[data-visible]{opacity:1;transform:none;transition:opacity .25s var(--ease),transform .25s var(--ease)}
+.log .t{color:var(--apagado)}
+.log .tilde{width:14px;height:14px;margin:0 2px -2px 0;stroke:var(--verde-claro);stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.log em{font-style:normal;color:var(--sodio)}
+
+/* Secciones */
+section{scroll-margin-top:76px}
+.bloque{padding:72px 0;border-top:1px solid var(--linea)}
+.encabezado{display:grid;grid-template-columns:260px minmax(0,1fr);gap:40px}
+.encabezado h2{margin:0;font-size:1.5rem;line-height:1.15;font-weight:800;font-variation-settings:"wdth" 112;letter-spacing:-.02em;position:sticky;top:84px;align-self:start}
+.encabezado h2 small{display:block;margin-top:6px;font-size:.9375rem;font-weight:400;letter-spacing:0;color:var(--pizarra);font-variation-settings:"wdth" 100}
+@media (max-width:900px){.hero{grid-template-columns:1fr;gap:40px;padding-top:40px}.encabezado{grid-template-columns:minmax(0,1fr);gap:20px}.encabezado h2{position:static}}
+
+/* Perfil: banda de foto con la frase que se enciende al bajar */
+.banda{position:relative;isolation:isolate;overflow:hidden;display:grid;align-items:end;min-height:min(88vh,780px);background:var(--tinta);color:#FFFFFF;view-timeline:--banda}
+.banda-fondo{position:absolute;inset:0;z-index:-2;width:100%;height:100%;object-fit:cover}
+.banda::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(to top,rgb(14 23 38 / .94),rgb(14 23 38 / .4) 55%,rgb(14 23 38 / .1)),linear-gradient(to right,rgb(14 23 38 / .55),transparent 65%)}
+.banda-texto{padding:140px 0 72px}
+.banda h2{margin:0;max-width:14em;font-weight:800;font-variation-settings:"wdth" 118;font-size:clamp(2.1rem,5vw,4rem);line-height:1.02;letter-spacing:-.03em}
+.rasgos{display:flex;flex-wrap:wrap;gap:10px 36px;margin:32px 0 0;padding:0;list-style:none;color:var(--bruma-clara)}
+.rasgos li{display:flex;align-items:flex-start;gap:10px}
+.rasgos li::before{content:"";flex:none;width:18px;height:2px;margin-top:.8em;background:var(--sodio)}
+@supports (animation-timeline:view()){
+  .banda-fondo{animation:acercar linear both;animation-timeline:--banda;animation-range:cover}
+  @keyframes acercar{from{transform:scale(1.16) translateY(-2%)}to{transform:scale(1) translateY(2%)}}
+  .banda h2 .palabra{animation:encender linear both;animation-timeline:--banda;animation-range:cover calc(12% + var(--i) * 1.6%) cover calc(20% + var(--i) * 1.6%)}
+  @keyframes encender{from{opacity:.18}to{opacity:1}}
+}
+
+/* Línea de tiempo */
+.linea-tiempo{position:relative;margin:0;padding:0 0 0 28px;list-style:none}
+.linea-tiempo::before{content:"";position:absolute;left:5px;top:8px;bottom:8px;width:2px;background:var(--linea)}
+.linea-tiempo::after{content:"";position:absolute;left:5px;top:8px;bottom:8px;width:2px;background:var(--tinta);transform-origin:top}
+/* Se llena mientras se lee, con la línea de tiempo nativa del scroll; sin soporte queda completa. */
+@supports (animation-timeline:view()){
+  .linea-tiempo::after{animation:llenar linear both;animation-timeline:view();animation-range:entry 20% exit 40%}
+  @keyframes llenar{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+}
+.trabajo{position:relative;padding-bottom:48px}
+.trabajo:last-child{padding-bottom:0}
+.trabajo::before{content:"";position:absolute;left:-28px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--niebla);box-shadow:inset 0 0 0 2.5px var(--tinta)}
+.trabajo[data-actual]::before{background:var(--sodio)}
+.trabajo h3{margin:0;font-size:1.3125rem;line-height:1.25;font-weight:750;font-variation-settings:"wdth" 106;letter-spacing:-.01em}
+.trabajo .donde{margin:4px 0 14px;color:var(--pizarra);font-size:1rem}
+.trabajo ul{margin:0;padding-left:1.1em;display:grid;gap:8px;max-width:44em}
+.trabajo li::marker{color:var(--pizarra)}
+.trabajo li{transition:background-color .25s var(--ease);border-radius:4px}
+.trabajo li[data-usa-activo]{background:var(--sodio-suave)}
+/* Tomas de cada trabajo: la foto se desliza apenas dentro de su marco al bajar */
+.toma{margin:0 0 18px;max-width:44em;aspect-ratio:16/7;border-radius:var(--r-m);overflow:hidden;background:var(--tinta);box-shadow:0 18px 40px -28px rgb(14 23 38 / .6)}
+.toma img{display:block;width:100%;height:100%;object-fit:cover}
+.toma.pantalla-web{aspect-ratio:16/10}
+.toma.pantalla-web img{object-position:top}
+@supports (animation-timeline:view()){
+  .toma.pantalla-web{animation:enderezar linear both;animation-timeline:view();animation-range:entry 0% cover 45%}
+  @keyframes enderezar{from{transform:perspective(1400px) rotateX(16deg) scale(.93);box-shadow:0 50px 70px -40px rgb(14 23 38 / .7)}to{transform:none}}
+  .toma:not(.pantalla-web) img{animation:deriva linear both;animation-timeline:view();animation-range:cover}
+  @keyframes deriva{from{transform:scale(1.1) translateY(-4%)}to{transform:scale(1.1) translateY(4%)}}
+}
+
+/* Proyecto y diagrama de arquitectura */
+#proyecto{padding:96px 0}
+#formacion{padding:56px 0}
+#proyecto .encabezado{grid-template-columns:minmax(0,1fr);gap:24px}
+#proyecto .encabezado h2{position:static}
+.proyecto{background:var(--papel);border-radius:var(--r-l);padding:32px;box-shadow:0 1px 0 rgb(14 23 38 / .04),0 24px 48px -36px rgb(14 23 38 / .45)}
+.proyecto h3{margin:0;font-size:1.75rem;font-weight:800;font-variation-settings:"wdth" 115;letter-spacing:-.02em}
+.proyecto .donde{margin:4px 0 20px;color:var(--pizarra)}
+.arquitectura{width:100%;height:auto;display:block;margin:8px 0 24px}
+.arquitectura .caja{fill:var(--niebla);stroke:var(--linea);stroke-width:1.5}
+.arquitectura .caja.central{fill:var(--tinta);stroke:none}
+.arquitectura text{font:600 13px var(--sans);fill:var(--tinta)}
+.arquitectura .central + text,.arquitectura text.claro{fill:#FFFFFF}
+.arquitectura .sub-t{font:400 11.5px var(--mono);fill:var(--pizarra)}
+.arquitectura .claro.sub-t{fill:var(--bruma)}
+.arquitectura .via{fill:none;stroke:#B9C3CF;stroke-width:1.5;stroke-dasharray:4 5}
+.arquitectura .via{transition:stroke .25s var(--ease)}
+.arquitectura .via[data-activa]{stroke:var(--pizarra)}
+.arquitectura .haz{fill:none;stroke:var(--sodio);stroke-width:3;stroke-linecap:round;stroke-dasharray:14 100;stroke-dashoffset:14;opacity:0}
+.arquitectura .haz[data-viaja]{animation:viajar .95s cubic-bezier(.16,1,.3,1) forwards}
+@keyframes viajar{0%{stroke-dashoffset:14;opacity:1}80%{opacity:1}100%{stroke-dashoffset:-100;opacity:0}}
+.arquitectura.vertical{display:none;max-width:420px;margin-inline:auto}
+@media (max-width:700px){.arquitectura:not(.vertical){display:none}.arquitectura.vertical{display:block}}
+.proyecto-cuerpo{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:40px;align-items:center}
+.arquitectura [data-pieza]{cursor:pointer;outline:none;transform-box:fill-box;transform-origin:center;transition:transform var(--resorte-t) var(--resorte)}
+.arquitectura [data-pieza][data-activa]{transform:scale(1.045)}
+.arquitectura [data-pieza] rect{transition:fill .2s var(--ease),stroke .2s var(--ease)}
+.arquitectura [data-pieza][data-activa] .caja:not(.central){fill:var(--sodio-suave);stroke:var(--tinta)}
+.arquitectura [data-pieza][data-activa] .central{fill:#24344F}
+.arquitectura [data-pieza]:focus-visible rect{stroke:var(--tinta);stroke-width:3}
+.arquitectura [data-pieza]:focus-visible .central{stroke:var(--apagado)}
+.pieza-texto{margin:0;min-height:3.2em;max-width:34em;font-size:1.125rem;line-height:1.45;font-weight:500}
+.pieza-texto b{font-weight:750}
+/* Celular con la tienda real: tres pantallas que se suceden mientras se ve */
+.telefono{transform:perspective(900px) rotateX(var(--ry,0deg)) rotateY(var(--rx,0deg));transition:transform var(--resorte-t) var(--resorte);margin:0;padding:8px;border-radius:34px;background:var(--tinta);box-shadow:0 30px 60px -30px rgb(14 23 38 / .6)}
+.pantalla{position:relative;aspect-ratio:390/844;border-radius:26px;overflow:hidden;background:var(--niebla)}
+.pantalla img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .6s var(--ease)}
+.pantalla img[data-actual]{opacity:1}
+.solo-impresion{display:none}
+.pausa{margin:10px 0 0;padding:6px 12px;border:0;border-radius:var(--r-s);background:none;color:var(--pizarra);font:500 .9375rem var(--sans);cursor:pointer;box-shadow:inset 0 0 0 1px var(--linea);transition:color .15s var(--ease),box-shadow .15s var(--ease)}
+.pausa:hover{color:var(--tinta);box-shadow:inset 0 0 0 1px var(--tinta)}
+/* Workflow real del proyecto, presentado como una imagen de código */
+.codigo{margin:32px 0 0;max-width:52em;border-radius:var(--r-m);background:var(--tinta);color:var(--tinta-texto);overflow:hidden;box-shadow:0 24px 48px -32px rgb(14 23 38 / .6)}
+.codigo figcaption{padding:12px 18px;border-bottom:1px solid var(--tinta-3);font:500 .8125rem var(--mono);color:var(--bruma)}
+.codigo pre{margin:0;padding:16px 18px 18px;overflow-x:auto;font:400 .8125rem/1.65 var(--mono);tab-size:2}
+.codigo .k{color:#9FB2CC}
+.codigo .c{color:var(--sodio-suave)}
+.codigo .m{color:var(--apagado)}
+.codigo .g{color:var(--sodio)}
+.codigo .paso{display:inline-block;width:100%;border-radius:4px;transition:background-color .35s var(--ease)}
+.codigo .paso[data-leyendo]{background:rgb(255 194 61 / .12)}
+@media (max-width:900px){.proyecto-cuerpo{grid-template-columns:minmax(0,1fr)}.telefono{width:min(220px,62%);margin-inline:auto}}
+.nota{margin:16px 0 0;font-size:.9375rem;color:var(--pizarra)}
+@media (max-width:700px){.proyecto{padding:22px}}
+
+/* Stack */
+.grupos{display:grid;grid-template-columns:repeat(2,1fr);gap:28px 40px}
+.grupo h3{margin:0 0 10px;font-size:1rem;font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none}
+.chip{display:inline-block;font:500 .9375rem var(--sans);color:var(--tinta);border:0;padding:6px 12px;border-radius:var(--r-s);background:var(--papel);box-shadow:inset 0 0 0 1px var(--linea)}
+button.chip{cursor:pointer;transition:transform var(--resorte-t) var(--resorte),background-color .2s var(--ease),box-shadow .2s var(--ease)}
+button.chip:active{transform:scale(.95);transition-duration:.1s}
+.chip[aria-pressed="true"]{background:var(--sodio-suave);box-shadow:inset 0 0 0 1.5px var(--tinta)}
+.chip:focus-visible{box-shadow:inset 0 0 0 1.5px var(--tinta)}
+@media (hover:hover) and (pointer:fine){button.chip:hover{box-shadow:inset 0 0 0 1.5px var(--tinta)}}
+.ayuda{margin:24px 0 0;font-size:.9375rem;color:var(--pizarra)}
+.donde-se-uso{margin:6px 0 0;min-height:1.6em;font-weight:600;opacity:0;transition:opacity .2s var(--ease)}
+.donde-se-uso[data-visible]{opacity:1}
+number-flow{font-variant-numeric:tabular-nums;--number-flow-mask-height:.2em}
+@media (max-width:700px){.grupos{grid-template-columns:1fr}}
+
+/* Formación */
+.tres{display:grid;grid-template-columns:repeat(3,1fr);gap:32px}
+.tres h3{margin:0 0 12px;font-size:1.0625rem;font-weight:750}
+.tres ul{margin:0;padding:0;list-style:none;display:grid;gap:14px}
+.tres li b{display:block;font-weight:600}
+.tres li span{color:var(--pizarra);font-size:.9375rem}
+@media (max-width:860px){.tres{grid-template-columns:1fr}}
+
+/* Cierre */
+.cierre{padding:96px 0 72px;background:var(--tinta);color:#FFFFFF}
+.cierre .boton.principal{background:var(--sodio);color:var(--tinta);box-shadow:0 12px 28px -14px rgb(255 194 61 / .55)}
+.cierre .boton.principal:hover{background:#FFD06A}
+.cierre .boton.secundario{background:none;color:#FFFFFF;box-shadow:inset 0 0 0 1.5px var(--tinta-borde)}
+.cierre .boton.secundario:hover{box-shadow:inset 0 0 0 1.5px var(--bruma)}
+.cierre :focus-visible{outline-color:var(--sodio)}
+@supports (animation-timeline:view()){.cierre h2{animation:subir linear both;animation-timeline:view();animation-range:entry 15% cover 40%}}
+.cierre h2{margin:0 0 12px;font-weight:850;font-variation-settings:"wdth" 122;font-size:clamp(2.2rem,5vw,3.75rem);line-height:1;letter-spacing:-.03em;max-width:14em}
+.cierre p{margin:0 0 24px;color:var(--bruma-clara);max-width:36em}
+footer{padding:0 0 40px;background:var(--tinta);color:var(--apagado);font-size:.875rem}
+footer .envoltura{padding-top:24px;border-top:1px solid var(--tinta-3)}
+
+
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  h1,.rastro::before{animation:none}
+  .boton:active,button.chip:active{transform:none}
+  .toma.pantalla-web{animation:none}
+  .telefono{transform:none}
+  .cierre h2{animation:none}
+  .arquitectura [data-pieza][data-activa]{transform:none}
+  .log li{opacity:1;transform:none}
+  .etapas .avance{transform:scaleX(1)}
+  .linea-tiempo::after{animation:none;transform:none}
+  .banda-fondo,.banda h2 .palabra,.toma img{animation:none}
+}
+@media (prefers-reduced-transparency:reduce){.barra{background:var(--niebla);backdrop-filter:none;border-bottom:1px solid var(--linea)}.barra::after{display:none}}
+
+/* Impresión: dos páginas A4 limpias, sin animación */
+@media print{
+  @page{size:A4;margin:14mm 14mm}
+  html{font-size:8.6pt}
+  body{background:#fff;line-height:1.38}
+  .contacto-impreso{display:block!important;grid-column:1/-1;margin:4px 0 0;font-size:1rem}
+  .nota,.toma,.telefono,.pieza-texto{display:none!important}
+  .solo-impresion{display:grid}
+  .banda{display:block;min-height:0;background:none;color:var(--tinta);border-top:1px solid #D6DCE4}
+  .banda::before,.banda-fondo{display:none}
+  .banda-texto{padding:8px 0}
+  .banda h2{font-size:12pt;max-width:none}
+  .rasgos{margin-top:4px;color:var(--pizarra);gap:4px 16px}
+  .trabajo ul,.proyecto ul{gap:2px}
+  .tres{grid-template-columns:repeat(3,1fr);gap:14px}
+  .tres ul{gap:6px}
+  .grupos{grid-template-columns:repeat(3,1fr);gap:8px 16px}
+  .barra,.acciones,.copiado,.corrida,.ayuda,.saltar,.cierre,.codigo,.pausa,.duracion,#t-proy small,.disponible,.repetir,.donde-se-uso,.arquitectura,footer{display:none!important}
+  .hero{display:block;padding:0 0 10px}
+  h1{font-size:26pt}
+  .bajada{font-size:1.05rem}
+  .foto{filter:grayscale(1);width:64px;height:64px;box-shadow:none}
+  .bloque,#proyecto,#formacion{padding:8px 0;border-top:1px solid #D6DCE4;break-inside:auto}
+  .encabezado{grid-template-columns:1fr;gap:6px}
+  .encabezado h2{position:static;font-size:13pt}
+  .proyecto{box-shadow:none;padding:0}
+  .trabajo{padding-bottom:10px}
+  .trabajo li,.proyecto li,.tres li{break-inside:avoid}
+  h2,h3{break-after:avoid}
+  .linea-tiempo::after{display:none}
+  .chip{box-shadow:none;padding:0 6px 0 0;background:none}
+  .cierre{padding:10px 0}
+  .cierre h2{font-size:14pt}
+  a[href^="http"]::after{content:" (" attr(href) ")";font-size:8pt;color:#556172}
+}
+</style>
+</head>
+<body>
+<a class="saltar" href="#principal">Saltar al contenido</a>
+<header class="barra">
+  <div class="envoltura">
+    <a class="marca" href="#inicio">Alejandro Rey</a>
+    <nav aria-label="Secciones">
+      <a href="#perfil">Perfil</a><a href="#experiencia">Experiencia</a><a href="#proyecto">Master Pet</a><a href="#stack">Stack</a><a href="#formacion">Formación</a><a href="#contacto">Contacto</a>
+    </nav>
+  </div>
+</header>
+
+<main id="principal">
+  <div class="envoltura">
+    <section class="hero" id="inicio" aria-labelledby="nombre">
+      <div class="identidad">
+        <img class="foto" src="foto.webp" width="96" height="96" alt="Alejandro Rey">
+        <h1 id="nombre">Alejandro Rey</h1>
+        <p class="rol">DevOps y QA Automation Engineer</p>
+        <p class="bajada">Construyo pipelines CI/CD y pruebas automatizadas que dejan entregar sin miedo. Lo hice para bancos en Tsoft y hoy lo aplico a un ecommerce propio, de la base de datos al checkout.</p>
+        <p class="disponible">Buenos Aires, Argentina. Abierto a nuevas oportunidades.</p>
+        <div class="acciones">
+          <a class="boton principal" href="mailto:reyalejandrojoaquin@gmail.com">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>Escribime</a>
+          <a class="boton secundario" href="https://www.linkedin.com/in/alejandro-joaquin-rey/" rel="me noopener" target="_blank">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM3 9.75h4v11H3v-11Zm6.5 0h3.8v1.5h.06c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.77 2.6 4.77 6v5.55h-4v-4.92c0-1.17-.02-2.68-1.65-2.68-1.65 0-1.9 1.28-1.9 2.6v5h-3.85v-11Z"/></svg>LinkedIn</a>
+          <button class="boton terciario" type="button" data-copiar="reyalejandrojoaquin@gmail.com">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg><span>Copiar correo</span></button>
+        </div>
+        <p class="copiado" data-copiado role="status" aria-live="polite"></p>
+        <p class="contacto-impreso" hidden>reyalejandrojoaquin@gmail.com · linkedin.com/in/alejandro-joaquin-rey · Buenos Aires</p>
+      </div>
+
+      <figure class="corrida" aria-label="Resumen del perfil, presentado como una corrida de pipeline" data-corrida>
+        <header><span>alejandro-rey / cv</span><b>main</b><span class="duracion" aria-hidden="true"><number-flow data-duracion data-decimales>0</number-flow> s</span><span class="estado-run" data-estado-run>en curso</span><button class="repetir" type="button" data-repetir>Volver a correr</button></header>
+        <span class="rastro" aria-hidden="true"></span>
+        <div class="etapas" aria-hidden="true">
+          <span class="avance" data-avance></span>
+          <div class="etapa"><span class="nodo"><svg viewBox="0 0 24 24"><path d="M5 12.5 10 17l9-10"/></svg></span>checkout</div>
+          <div class="etapa"><span class="nodo"><svg viewBox="0 0 24 24"><path d="M5 12.5 10 17l9-10"/></svg></span>build</div>
+          <div class="etapa"><span class="nodo"><svg viewBox="0 0 24 24"><path d="M5 12.5 10 17l9-10"/></svg></span>test</div>
+          <div class="etapa"><span class="nodo"><svg viewBox="0 0 24 24"><path d="M5 12.5 10 17l9-10"/></svg></span>scan</div>
+          <div class="etapa"><span class="nodo"><svg viewBox="0 0 24 24"><path d="M5 12.5 10 17l9-10"/></svg></span>deploy</div>
+        </div>
+        <ul class="log">
+          <li><span class="t">00:01</span><span><svg class="tilde" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 10 17l9-10"/></svg> 2 años en DevOps y QA para clientes bancarios <em>(Tsoft)</em></span></li>
+          <li><span class="t">00:04</span><span><svg class="tilde" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 10 17l9-10"/></svg> Jenkins, Azure DevOps, Docker y Kubernetes</span></li>
+          <li><span class="t">00:09</span><span><svg class="tilde" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 10 17l9-10"/></svg> Selenium, JUnit, JMeter y Cucumber</span></li>
+          <li><span class="t">00:12</span><span><svg class="tilde" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 10 17l9-10"/></svg> CyberArk, Dynatrace y SonarQube</span></li>
+          <li><span class="t">00:16</span><span><svg class="tilde" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 10 17l9-10"/></svg> Ecommerce propio con Astro, Medusa y PostgreSQL</span></li>
+          <li><span class="t">00:18</span><span>Listo para el próximo equipo.</span></li>
+        </ul>
+      </figure>
+    </section>
+  </div>
+
+  <section class="banda" id="perfil" aria-labelledby="t-perfil">
+    <img class="banda-fondo" src="ciudad-1600.webp" srcset="ciudad-900.webp 900w, ciudad-1600.webp 1600w" sizes="100vw" width="1600" height="900" alt="" loading="lazy" decoding="async">
+    <div class="envoltura banda-texto">
+      <h2 id="t-perfil" data-encender>Armo el camino que lleva el código de un commit a producción, y las pruebas que lo cuidan.</h2>
+      <ul class="rasgos">
+        <li>Foco largo en un mismo problema</li>
+        <li>Mi mejor trabajo sale en equipo, con buen clima</li>
+        <li>Siempre probando herramientas nuevas</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="bloque" id="experiencia" aria-labelledby="t-exp">
+    <div class="envoltura encabezado">
+      <h2 id="t-exp">Experiencia<small>Lo más reciente primero</small></h2>
+      <ol class="linea-tiempo" data-linea-tiempo>
+        <li class="trabajo" data-actual>
+          <h3>Desarrollador full stack en Master Pet</h3>
+          <p class="donde">2026 – hoy. Proyecto propio, remoto.</p>
+          <figure class="toma pantalla-web"><img src="tienda-escritorio-1400.webp" srcset="tienda-escritorio-760.webp 760w, tienda-escritorio-1400.webp 1400w" sizes="(max-width:900px) 92vw, 720px" width="1400" height="875" alt="Inicio de la tienda de Master Pet en la compu" loading="lazy" decoding="async"></figure>
+          <ul>
+            <li data-usa="astro typescript medusa node postgresql">Tienda en Astro y TypeScript; backend en Medusa sobre Node.js y PostgreSQL.</li>
+            <li data-usa="mercadopago fixy">Pagos con Mercado Pago Checkout Pro (sandbox) y envíos cotizados con Fixy.</li>
+            <li data-usa="playwright tdd githubactions">Más de 250 verificaciones automáticas con Playwright, corridas en GitHub Actions.</li>
+            <li data-usa="docker n8n sentry">Staging aislado con Docker, automatizaciones con n8n y errores en Sentry.</li>
+            <li data-usa="ia">Agentes de IA (Claude Code y Codex) bajo TDD: cada cambio entra con su prueba.</li>
+          </ul>
+        </li>
+        <li class="trabajo">
+          <h3>QA Engineer Ssr y DevOps Engineer Jr en Tsoft</h3>
+          <p class="donde">Oct. 2021 – sept. 2023. Jornada completa en Buenos Aires.</p>
+          <figure class="toma" aria-hidden="true"><img src="rack-1400.webp" srcset="rack-760.webp 760w, rack-1400.webp 1400w" sizes="(max-width:900px) 92vw, 720px" width="1400" height="788" alt="" loading="lazy" decoding="async"></figure>
+          <ul>
+            <li data-usa="jenkins maven gradle azuredevops git docker kubernetes sonarqube terraform aws gcp xray">Pipelines CI/CD para bancos con Jenkins, Maven, Gradle, Azure DevOps, Git, Docker, Kubernetes, SonarQube, Terraform, AWS, Google Cloud y Xray.</li>
+            <li data-usa="jenkins jira xray maven jmeter aws">Propuesta e integración DevOps-SCM para Banco Consorcio (Chile) con Jenkins, Jira, Xray, Maven, JMeter y AWS.</li>
+            <li data-usa="junit selenium jmeter postman cucumber">Pruebas funcionales, de carga y de APIs con JUnit, Selenium, JMeter, Postman y Cucumber.</li>
+            <li data-usa="cyberark dynatrace">Máquinas virtuales administradas y monitoreadas con CyberArk y Dynatrace.</li>
+            <li data-usa="jira">Dos instancias de Jira sincronizadas con Automation Rules.</li>
+          </ul>
+        </li>
+        <li class="trabajo">
+          <h3>Desarrollador web en Master Pet</h3>
+          <p class="donde">Jun. – jul. 2021. Autónomo, remoto.</p>
+          <ul>
+            <li data-usa="web">Primer sitio de la marca: programación, diseño, contenidos y hosting.</li>
+          </ul>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="bloque" id="proyecto" aria-labelledby="t-proy">
+    <div class="envoltura encabezado">
+      <h2 id="t-proy">Proyecto destacado<small>Cómo está armado</small></h2>
+      <article class="proyecto">
+        <h3>Ecommerce de Master Pet</h3>
+        <p class="donde">Tienda de productos de higiene para mascotas en <a href="https://masterpet.com.ar" target="_blank" rel="noopener">masterpet.com.ar</a></p>
+        <div class="proyecto-cuerpo">
+        <div>
+        <svg class="arquitectura" viewBox="0 0 760 236" role="group" aria-labelledby="arq-t" data-arquitectura>
+          <title id="arq-t">Arquitectura: la tienda Astro habla con la API de Medusa, que guarda en PostgreSQL y se integra con Mercado Pago, Fixy, n8n y Sentry.</title>
+          <path class="via" id="v1" d="M150 118 H300"/>
+          <path class="via" id="v2" d="M460 118 H610"/>
+          <path class="via" id="v3" d="M380 82 V40 H520"/>
+          <path class="via" id="v4" d="M380 154 V196 H520"/>
+          <path class="via" id="v5" d="M380 82 V40 H240"/>
+          <g data-pieza="tienda" tabindex="0"><rect class="caja" x="10" y="84" width="140" height="68" rx="12"/><text x="80" y="114" text-anchor="middle">Tienda</text><text class="sub-t" x="80" y="133" text-anchor="middle">Astro y TypeScript</text></g>
+          <g data-pieza="api" tabindex="0"><rect class="caja central" x="300" y="82" width="160" height="72" rx="12"/><text class="claro" x="380" y="114" text-anchor="middle">API de comercio</text><text class="claro sub-t" x="380" y="133" text-anchor="middle">Medusa en Node.js</text></g>
+          <g data-pieza="datos" tabindex="0"><rect class="caja" x="610" y="84" width="140" height="68" rx="12"/><text x="680" y="114" text-anchor="middle">Base de datos</text><text class="sub-t" x="680" y="133" text-anchor="middle">PostgreSQL</text></g>
+          <g data-pieza="pagos" tabindex="0"><rect class="caja" x="520" y="14" width="150" height="52" rx="10"/><text x="595" y="37" text-anchor="middle">Pagos</text><text class="sub-t" x="595" y="54" text-anchor="middle">Mercado Pago</text></g>
+          <g data-pieza="envios" tabindex="0"><rect class="caja" x="520" y="170" width="150" height="52" rx="10"/><text x="595" y="193" text-anchor="middle">Envíos</text><text class="sub-t" x="595" y="210" text-anchor="middle">Fixy</text></g>
+          <g data-pieza="operacion" tabindex="0"><rect class="caja" x="90" y="14" width="150" height="52" rx="10"/><text x="165" y="37" text-anchor="middle">Operación</text><text class="sub-t" x="165" y="54" text-anchor="middle">n8n y Sentry</text></g>
+          <path class="haz" pathLength="100" data-haz="v1" d="M150 118 H300"/><path class="haz" pathLength="100" data-haz="v2" d="M460 118 H610"/><path class="haz" pathLength="100" data-haz="v3" d="M380 82 V40 H520"/><path class="haz" pathLength="100" data-haz="v4" d="M380 154 V196 H520"/><path class="haz" pathLength="100" data-haz="v5" d="M380 82 V40 H240"/>
+        </svg>
+        <svg class="arquitectura vertical" viewBox="0 0 340 372" role="group" aria-labelledby="arq-tv" data-arquitectura>
+          <title id="arq-tv">Arquitectura: la tienda Astro habla con la API de Medusa, que guarda en PostgreSQL y se integra con Mercado Pago, Fixy, n8n y Sentry.</title>
+          <path class="via" id="w1" d="M85 70 V150"/>
+          <path class="via" id="w2" d="M85 218 V302"/>
+          <path class="via" id="w3" d="M160 184 H190"/>
+          <path class="via" id="w4" d="M160 166 H175 V86 H190"/>
+          <path class="via" id="w5" d="M160 202 H175 V282 H190"/>
+          <g data-pieza="tienda" tabindex="0"><rect class="caja" x="10" y="10" width="150" height="60" rx="12"/><text x="85" y="36" text-anchor="middle">Tienda</text><text class="sub-t" x="85" y="54" text-anchor="middle">Astro y TypeScript</text></g>
+          <g data-pieza="api" tabindex="0"><rect class="caja central" x="10" y="150" width="150" height="68" rx="12"/><text class="claro" x="85" y="180" text-anchor="middle">API de comercio</text><text class="claro sub-t" x="85" y="198" text-anchor="middle">Medusa en Node.js</text></g>
+          <g data-pieza="datos" tabindex="0"><rect class="caja" x="10" y="302" width="150" height="60" rx="12"/><text x="85" y="328" text-anchor="middle">Base de datos</text><text class="sub-t" x="85" y="346" text-anchor="middle">PostgreSQL</text></g>
+          <g data-pieza="operacion" tabindex="0"><rect class="caja" x="190" y="60" width="140" height="52" rx="10"/><text x="260" y="83" text-anchor="middle">Operación</text><text class="sub-t" x="260" y="100" text-anchor="middle">n8n y Sentry</text></g>
+          <g data-pieza="pagos" tabindex="0"><rect class="caja" x="190" y="158" width="140" height="52" rx="10"/><text x="260" y="181" text-anchor="middle">Pagos</text><text class="sub-t" x="260" y="198" text-anchor="middle">Mercado Pago</text></g>
+          <g data-pieza="envios" tabindex="0"><rect class="caja" x="190" y="256" width="140" height="52" rx="10"/><text x="260" y="279" text-anchor="middle">Envíos</text><text class="sub-t" x="260" y="296" text-anchor="middle">Fixy</text></g>
+          <path class="haz" pathLength="100" data-haz="w1" d="M85 70 V150"/><path class="haz" pathLength="100" data-haz="w2" d="M85 218 V302"/><path class="haz" pathLength="100" data-haz="w3" d="M160 184 H190"/><path class="haz" pathLength="100" data-haz="w4" d="M160 166 H175 V86 H190"/><path class="haz" pathLength="100" data-haz="w5" d="M160 202 H175 V282 H190"/>
+        </svg>
+        <p class="pieza-texto" data-pieza-texto></p>
+        <button class="pausa" type="button" data-pausa hidden>Pausar recorrido</button>
+        <ul class="solo-impresion" data-piezas>
+          <li data-pieza="api"><b>API de comercio.</b> El precio, el stock y los descuentos los decide el servidor: el navegador nunca fija un total.</li>
+          <li data-pieza="pagos"><b>Pagos.</b> Cada pago tiene una identidad única: un reintento o una respuesta perdida no cobran dos veces.</li>
+          <li data-pieza="envios"><b>Envíos.</b> Con el código postal se deduce la localidad y se cotiza el envío.</li>
+          <li data-pieza="datos"><b>Base de datos.</b> Accesos firmados y revocables protegen los datos de cada comprador.</li>
+          <li data-pieza="tienda"><b>Tienda.</b> Catálogo, carrito de invitado y cupones en Astro y TypeScript.</li>
+          <li data-pieza="operacion"><b>Operación.</b> Automatizaciones con n8n y avisos de errores con Sentry.</li>
+        </ul>
+        </div>
+        <figure class="telefono" data-telefono>
+          <div class="pantalla">
+            <img src="tienda-celular-1.webp" width="520" height="1125" alt="La tienda de Master Pet en un celular" loading="lazy" decoding="async" data-actual>
+            <img src="tienda-celular-2.webp" width="520" height="1125" alt="" loading="lazy" decoding="async">
+            <img src="tienda-celular-3.webp" width="520" height="1125" alt="" loading="lazy" decoding="async">
+          </div>
+        </figure>
+        </div>
+        <figure class="codigo" data-codigo>
+          <figcaption>.github/workflows/calidad.yml</figcaption>
+<pre><code><span class="k">name:</span> Calidad MasterPet
+<span class="k">on:</span>
+  <span class="k">pull_request:</span>
+    <span class="k">paths:</span> [<span class="c">'backend/**'</span>, <span class="c">'scripts/**'</span>, <span class="c">'.github/**'</span>]
+<span class="k">permissions:</span>
+  <span class="k">contents:</span> read
+<span class="k">concurrency:</span>
+  <span class="k">group:</span> calidad-${{ github.workflow }}-${{ github.ref }}
+  <span class="k">cancel-in-progress:</span> true
+<span class="k">jobs:</span>
+  <span class="k">controles:</span>
+    <span class="k">runs-on:</span> ubuntu-24.04
+    <span class="k">timeout-minutes:</span> 20
+    <span class="k">steps:</span>
+<span class="paso">      <span class="g">-</span> <span class="k">name:</span> Leer fuentes
+        <span class="k">uses:</span> actions/checkout@3d3c42e5aac5… <span class="m"># v7.0.1</span>
+        <span class="k">with:</span> { <span class="k">persist-credentials:</span> false }</span>
+<span class="paso">      <span class="g">-</span> <span class="k">name:</span> Preparar Node</span>
+<span class="paso">      <span class="g">-</span> <span class="k">name:</span> Instalar dependencias del lock sin scripts de instalación
+        <span class="k">run:</span> npm ci --ignore-scripts --no-audit --no-fund</span>
+<span class="paso">      <span class="g">-</span> <span class="k">name:</span> Tipos, reglas comerciales, pagos y automatizaciones sin servicios</span>
+<span class="paso">      <span class="g">-</span> <span class="k">name:</span> Contrato del auditor de espacio</span></code></pre>
+        </figure>
+        <p class="nota">Validado en un laboratorio local; las integraciones de producción están en curso.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="bloque" id="stack" aria-labelledby="t-stack">
+    <div class="envoltura encabezado">
+      <h2 id="t-stack">Stack<small>Herramientas con las que trabajé</small></h2>
+      <div>
+        <div class="grupos">
+          <div class="grupo"><h3>CI/CD y control de versiones</h3><ul class="chips">
+            <li><button type="button" class="chip" data-usa="jenkins">Jenkins</button></li><li><button type="button" class="chip" data-usa="azuredevops">Azure DevOps</button></li><li><button type="button" class="chip" data-usa="githubactions">GitHub Actions</button></li><li><button type="button" class="chip" data-usa="git">Git</button></li><li><button type="button" class="chip" data-usa="maven">Maven</button></li><li><button type="button" class="chip" data-usa="gradle">Gradle</button></li></ul></div>
+          <div class="grupo"><h3>Cloud, contenedores e infraestructura</h3><ul class="chips">
+            <li><button type="button" class="chip" data-usa="aws">AWS (EC2, S3)</button></li><li><button type="button" class="chip" data-usa="gcp">Google Cloud</button></li><li><button type="button" class="chip" data-usa="docker">Docker</button></li><li><button type="button" class="chip" data-usa="kubernetes">Kubernetes</button></li><li><button type="button" class="chip" data-usa="terraform">Terraform</button></li><li class="chip">Linux</li></ul></div>
+          <div class="grupo"><h3>Pruebas y calidad</h3><ul class="chips">
+            <li><button type="button" class="chip" data-usa="selenium">Selenium</button></li><li><button type="button" class="chip" data-usa="junit">JUnit</button></li><li><button type="button" class="chip" data-usa="playwright">Playwright</button></li><li><button type="button" class="chip" data-usa="jmeter">JMeter</button></li><li><button type="button" class="chip" data-usa="postman">Postman</button></li><li><button type="button" class="chip" data-usa="cucumber">Cucumber y Gherkin</button></li><li><button type="button" class="chip" data-usa="sonarqube">SonarQube</button></li><li><button type="button" class="chip" data-usa="tdd">TDD</button></li></ul></div>
+          <div class="grupo"><h3>Seguridad y monitoreo</h3><ul class="chips">
+            <li><button type="button" class="chip" data-usa="cyberark">CyberArk</button></li><li><button type="button" class="chip" data-usa="dynatrace">Dynatrace</button></li><li><button type="button" class="chip" data-usa="sentry">Sentry</button></li></ul></div>
+          <div class="grupo"><h3>Desarrollo y datos</h3><ul class="chips">
+            <li><button type="button" class="chip" data-usa="typescript">TypeScript</button></li><li><button type="button" class="chip" data-usa="node">Node.js</button></li><li><button type="button" class="chip" data-usa="astro">Astro</button></li><li><button type="button" class="chip" data-usa="medusa">Medusa</button></li><li><button type="button" class="chip" data-usa="postgresql">PostgreSQL</button></li><li><button type="button" class="chip" data-usa="mercadopago">Mercado Pago</button></li><li><button type="button" class="chip" data-usa="fixy">Fixy</button></li><li class="chip">Python</li><li class="chip">Java</li><li class="chip">SQL</li></ul></div>
+          <div class="grupo"><h3>Gestión y automatización</h3><ul class="chips">
+            <li><button type="button" class="chip" data-usa="jira">Jira y Automation Rules</button></li><li><button type="button" class="chip" data-usa="xray">Xray</button></li><li><button type="button" class="chip" data-usa="n8n">n8n</button></li><li><button type="button" class="chip" data-usa="ia">Agentes de IA</button></li><li class="chip">Scrum</li><li class="chip">Kanban</li></ul></div>
+        </div>
+        <p class="ayuda">Pasá el mouse o el foco por una herramienta para ver dónde la usé. Con un clic vas a esas tareas, marcadas.</p>
+        <p class="donde-se-uso" data-donde aria-live="polite"><span data-donde-nombre></span>: <number-flow data-donde-n>0</number-flow> <span data-donde-resto></span></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="bloque" id="formacion" aria-labelledby="t-form">
+    <div class="envoltura encabezado">
+      <h2 id="t-form">Formación</h2>
+      <div class="tres">
+        <div><h3>Estudios</h3><ul>
+          <li><b>Ingeniería en Sistemas de Información</b><span>UTN, en curso. Cierre estimado en 2028.</span></li>
+          <li><b>Bachiller en Informática</b><span>Escuela ORT, 2016 – 2020. Especialización en diseño y desarrollo de aplicaciones.</span></li></ul></div>
+        <div><h3>Certificaciones y cursos</h3><ul>
+          <li><b>DevOps a la vanguardia</b><span>Tsoft. Linux, Jenkins, Maven, SonarQube, Terraform, AWS, GCP, Ansible y Docker.</span></li>
+          <li><b>Scrum Foundation Professional Certificate</b><span>CertiProf</span></li>
+          <li><b>The Kanban Foundation (KIKF)</b><span>CertiProf</span></li>
+          <li><b>Python y Transact-SQL</b><span>IEEE ITBA Student Chapter</span></li>
+          <li><b>Python Fullstack</b><span>Codo a Codo 4.0</span></li></ul></div>
+        <div><h3>Idiomas</h3><ul>
+          <li><b>Español</b><span>Nativo</span></li>
+          <li><b>Inglés</b><span>C1</span></li></ul>
+          <h3 style="margin-top:28px">Otros cursos</h3><ul>
+          <li><span>Dynatrace, CyberArk y Jira Automation Rules en Tsoft; Power BI, análisis de datos y Design Thinking.</span></li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cierre" id="contacto" aria-labelledby="t-contacto">
+    <div class="envoltura">
+      <h2 id="t-contacto">¿Armamos el próximo pipeline?</h2>
+      <p>Estoy en Buenos Aires y disponible para trabajo remoto o híbrido. Respondo rápido por correo o LinkedIn.</p>
+      <div class="acciones">
+        <a class="boton principal" href="mailto:reyalejandrojoaquin@gmail.com">reyalejandrojoaquin@gmail.com</a>
+        <a class="boton secundario" href="https://www.linkedin.com/in/alejandro-joaquin-rey/" target="_blank" rel="me noopener">linkedin.com/in/alejandro-joaquin-rey</a>
+      </div>
+    </div>
+  </section>
+</main>
+<footer><div class="envoltura">Imprimila con Ctrl+P y tenés el CV en PDF de dos páginas.</div></footer>
+
+<script>
+const quieto = matchMedia('(prefers-reduced-motion: reduce)').matches;
+console.log('%c¿Revisando el código? Bien ahí.%c\nEsta página es un solo HTML, sin build. Si querés charlar de pipelines: reyalejandrojoaquin@gmail.com', 'font:700 15px system-ui;color:#0E1726;background:#FFC23D;padding:4px 8px;border-radius:4px', 'font:13px system-ui;color:#556172');
+
+// La corrida: cada etapa pasa y suma una línea del log. Una sola vez, al cargar.
+(function corrida(){
+  const raiz = document.querySelector('[data-corrida]'); if (!raiz) return;
+  const etapas = [...raiz.querySelectorAll('.etapa')], lineas = [...raiz.querySelectorAll('.log li')], avance = raiz.querySelector('[data-avance]'), estado = raiz.querySelector('[data-estado-run]');
+  const repetir = raiz.querySelector('[data-repetir]');
+  // Ícono de la pestaña: un anillo sodio mientras corre; el tilde original al aprobar.
+  const icono = document.querySelector('[data-icono]'), tilde = icono.href;
+  const corriendo = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230E1726'/%3E%3Ccircle cx='16' cy='16' r='7.5' fill='none' stroke='%2326344B' stroke-width='3.4'/%3E%3Cpath d='M16 8.5a7.5 7.5 0 0 1 7.5 7.5' fill='none' stroke='%23FFC23D' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E";
+  const duracion = raiz.querySelector('[data-duracion]'), total = (350 + etapas.length * 420 + 120) / 1000;
+  const marcar = v => { const t = Math.round(v * 10) / 10; duracion.textContent = t.toLocaleString('es-AR', { minimumFractionDigits: 1 }); duracion.update?.(t); };
+  let reloj = null;
+  const aprobar = () => { clearInterval(reloj); marcar(total); icono.href = tilde; estado.textContent = 'aprobado'; estado.toggleAttribute('data-ok', true); };
+  const terminar = () => { etapas.forEach(e => e.toggleAttribute('data-paso', true)); lineas.forEach(l => l.toggleAttribute('data-visible', true)); avance.style.transform = 'scaleX(1)'; aprobar(); };
+  if (quieto) return terminar();
+  repetir.addEventListener('click', () => {
+    repetir.removeAttribute('data-listo');
+    etapas.forEach(e => e.removeAttribute('data-paso')); lineas.forEach(l => l.removeAttribute('data-visible'));
+    estado.textContent = 'en curso'; estado.removeAttribute('data-ok');
+    correr();
+  });
+  // Arranca cuando se ve: en el celular la tarjeta queda debajo de los botones.
+  new IntersectionObserver(([e], obs) => { if (e.isIntersecting) { obs.disconnect(); correr(); } }, { threshold: .35 }).observe(raiz);
+  function correr() {
+  const paso = 420;
+  raiz.toggleAttribute('data-corriendo', true); icono.href = corriendo;
+  const inicio = performance.now(); marcar(0); clearInterval(reloj); reloj = setInterval(() => marcar((performance.now() - inicio) / 1000), 200);
+  avance.animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], { duration: paso * (etapas.length - 1), delay: 350, easing: 'linear', fill: 'forwards' });
+  etapas.forEach((e, i) => setTimeout(() => { e.toggleAttribute('data-paso', true); lineas[i]?.toggleAttribute('data-visible', true); }, 350 + i * paso));
+  setTimeout(() => { lineas.at(-1).toggleAttribute('data-visible', true); aprobar(); raiz.removeAttribute('data-corriendo'); repetir.toggleAttribute('data-listo', true); }, 350 + etapas.length * paso + 120);
+  }
+})();
+
+// Perfil: la frase se enciende palabra por palabra al bajar (solo con la línea de tiempo nativa del scroll).
+if (!quieto && CSS.supports('animation-timeline: view()')) document.querySelectorAll('[data-encender]').forEach(h => {
+  h.innerHTML = h.textContent.split(' ').map((p, i) => `<span class="palabra" style="--i:${i}">${p}</span>`).join(' ');
+});
+
+// Proyecto: cada pieza del diagrama cuenta qué resuelve. Mientras nadie la toca, las recorre sola
+// y el celular pasa de pantalla con el mismo reloj.
+(function piezas(){
+  const texto = document.querySelector('[data-pieza-texto]'); if (!texto) return;
+  const dichos = new Map([...document.querySelectorAll('[data-piezas] li')].map(li => [li.dataset.pieza, li.innerHTML]));
+  const orden = [...dichos.keys()], grupos = [...document.querySelectorAll('.arquitectura [data-pieza]')];
+  grupos.forEach(g => g.setAttribute('aria-label', dichos.get(g.dataset.pieza).replace(/<[^>]+>/g, '')));
+  const vias = { tienda: ['v1', 'w1'], datos: ['v2', 'w2'], pagos: ['v3', 'w3'], envios: ['v4', 'w5'], operacion: ['v5', 'w4'], api: ['v1', 'v2', 'v3', 'v4', 'v5', 'w1', 'w2', 'w3', 'w4', 'w5'] };
+  const viajar = ids => ids.forEach(id => {
+    document.getElementById(id)?.toggleAttribute('data-activa', true);
+    if (quieto) return;
+    const h = document.querySelector(`[data-haz="${id}"]`); if (!h) return;
+    h.removeAttribute('data-viaja'); h.getBoundingClientRect(); h.toggleAttribute('data-viaja', true);
+  });
+  const fotos = [...document.querySelectorAll('[data-telefono] img')];
+  let i = 0, reloj = null;
+  const pasar = () => { mostrar(orden[i = (i + 1) % orden.length]); fotos.forEach((f, k) => f.toggleAttribute('data-actual', k === i % fotos.length)); };
+  const mostrar = clave => { grupos.forEach(g => g.toggleAttribute('data-activa', g.dataset.pieza === clave)); document.querySelectorAll('.arquitectura .via').forEach(v => v.removeAttribute('data-activa')); viajar(vias[clave]); texto.innerHTML = dichos.get(clave); };
+  const pausa = document.querySelector('[data-pausa]');
+  const detener = () => { clearInterval(reloj); reloj = 'quieto'; pausa.textContent = 'Seguir recorrido'; };
+  const tomar = clave => { detener(); texto.setAttribute('aria-live', 'polite'); mostrar(clave); };
+  pausa.addEventListener('click', () => {
+    if (reloj === 'quieto') { reloj = setInterval(pasar, 4200); pausa.textContent = 'Pausar recorrido'; texto.removeAttribute('aria-live'); pasar(); }
+    else detener();
+  });
+  grupos.forEach(g => ['pointerenter', 'focus', 'click'].forEach(ev => g.addEventListener(ev, () => tomar(g.dataset.pieza))));
+  mostrar(orden[0]);
+  if (quieto) return;
+  pausa.hidden = false;
+  let visto = false;
+  new IntersectionObserver(([e]) => {
+    if (e.isIntersecting && !visto) { visto = true; viajar(vias[orden[i]]); }
+    if (reloj === 'quieto') return;
+    clearInterval(reloj); reloj = null;
+    if (e.isIntersecting) reloj = setInterval(pasar, 4200);
+  }, { threshold: .3 }).observe(texto.parentElement);
+})();
+
+// Celular: se inclina hacia el puntero (solo con mouse) y vuelve con el resorte al salir.
+(function inclinar(){
+  const t = document.querySelector('[data-telefono]');
+  if (!t || quieto || !matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  t.addEventListener('pointermove', e => {
+    const r = t.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
+    t.style.transitionDuration = '.12s'; t.style.setProperty('--rx', `${x * 16}deg`); t.style.setProperty('--ry', `${-y * 12}deg`);
+  });
+  t.addEventListener('pointerleave', () => { t.style.transitionDuration = ''; t.style.setProperty('--rx', '0deg'); t.style.setProperty('--ry', '0deg'); });
+})();
+
+// Workflow: marca cada paso en el orden en que corre, una sola vez.
+(function workflow(){
+  const pasos = [...document.querySelectorAll('[data-codigo] .paso')]; if (!pasos.length || quieto) return;
+  new IntersectionObserver(([e], obs) => {
+    if (!e.isIntersecting) return; obs.disconnect();
+    pasos.forEach((p, i) => { setTimeout(() => p.toggleAttribute('data-leyendo', true), 300 + i * 500); setTimeout(() => p.removeAttribute('data-leyendo'), 300 + i * 500 + 700); });
+  }, { threshold: .4 }).observe(pasos[0].closest('figure'));
+})();
+
+// Stack: cada herramienta marca dónde la usé.
+(function dondeLaUse(){
+  const tareas = [...document.querySelectorAll('.trabajo li[data-usa]')];
+  const chips = [...document.querySelectorAll('.chip[data-usa]')], salida = document.querySelector('[data-donde]');
+  const usosDe = clave => tareas.filter(t => t.dataset.usa.split(' ').includes(clave));
+  const marcar = chip => tareas.forEach(t => t.toggleAttribute('data-usa-activo', !!chip && usosDe(chip.dataset.usa).includes(t)));
+  const contar = chip => {
+    const usos = usosDe(chip.dataset.usa), lugares = [...new Set(usos.map(t => t.closest('.trabajo').querySelector('h3').textContent.replace(/^.* en /, '')))];
+    salida.querySelector('[data-donde-nombre]').textContent = chip.textContent;
+    const n = salida.querySelector('[data-donde-n]');
+    n.textContent = usos.length; n.update?.(usos.length);
+    salida.querySelector('[data-donde-resto]').textContent = `${usos.length === 1 ? 'tarea' : 'tareas'} en ${lugares.join(' y ')}.`;
+    salida.toggleAttribute('data-visible', true);
+  };
+  // El clic fija la marca: sigue visible después de bajar hasta la experiencia.
+  let fijo = null;
+  chips.forEach(c => {
+    const on = () => { marcar(c); contar(c); }, off = () => { marcar(fijo); fijo ? contar(fijo) : salida.removeAttribute('data-visible'); };
+    c.addEventListener('pointerenter', on); c.addEventListener('pointerleave', off); c.addEventListener('focus', on); c.addEventListener('blur', off);
+    c.addEventListener('click', () => {
+      fijo = fijo === c ? null : c;
+      chips.forEach(o => o.setAttribute('aria-pressed', String(o === fijo)));
+      marcar(fijo);
+      if (fijo) usosDe(c.dataset.usa)[0]?.scrollIntoView({ block: 'center', behavior: quieto ? 'auto' : 'smooth' });
+    });
+  });
+})();
+
+// Copiar el correo, con confirmación.
+document.querySelectorAll('[data-copiar]').forEach(b => b.addEventListener('click', async () => {
+  const aviso = document.querySelector('[data-copiado]');
+  try { await navigator.clipboard.writeText(b.dataset.copiar); aviso.textContent = 'Correo copiado: ' + b.dataset.copiar; b.lastChild.textContent = 'Copiado'; setTimeout(() => b.lastChild.textContent = 'Copiar correo', 2000); }
+  catch { aviso.textContent = 'No se pudo copiar. El correo es ' + b.dataset.copiar; }
+}));
+
+// Navegación: marca la sección que se está leyendo.
+(function seccionActual(){
+  const links = new Map([...document.querySelectorAll('.barra nav a')].map(a => [a.getAttribute('href').slice(1), a]));
+  const obs = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) links.forEach((a, id) => id === e.target.id ? a.setAttribute('aria-current', 'true') : a.removeAttribute('aria-current')); }), { rootMargin: '-45% 0px -50% 0px' });
+  links.forEach((_, id) => { const s = document.getElementById(id); if (s) obs.observe(s); });
+})();
+</script>
+<script type="module">
+// NumberFlow (MIT): gira el contador del Stack. Sin red, el número igual se ve como texto.
+import('https://cdn.jsdelivr.net/npm/number-flow@0.6.2/+esm').then(() => {
+  const resorte = getComputedStyle(document.documentElement).getPropertyValue('--resorte').trim();
+  document.querySelectorAll('number-flow').forEach(n => {
+    n.locales = 'es-AR';
+    if (n.hasAttribute('data-decimales')) { n.format = { minimumFractionDigits: 1, maximumFractionDigits: 1 }; n.spinTiming = { duration: 180, easing: 'ease-out' }; }
+    else n.transformTiming = n.spinTiming = { duration: 600, easing: resorte };
+    n.update(+n.textContent.replace(',', '.') || 0);
+  });
+}).catch(() => {});
+</script>
+</body>
+</html>
