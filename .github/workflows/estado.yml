@@ -1,0 +1,37 @@
+# Monitor de disponibilidad y actividad del CV: mide cada hora masterpet.com.ar y este sitio, y trae las contribuciones
+# públicas de GitHub. Guarda estado.json en la rama «datos» (un solo commit, que se reemplaza), así no republica Pages.
+name: Estado y actividad
+on:
+  schedule:
+    - cron: '23 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: estado
+  cancel-in-progress: false
+jobs:
+  medir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Probar el script
+        run: node .github/scripts/estado.mjs --prueba
+      - name: Traer el estado anterior
+        run: git fetch --depth=1 origin datos && git show origin/datos:estado.json > "$RUNNER_TEMP/estado.json" || echo '{}' > "$RUNNER_TEMP/estado.json"
+      - name: Medir
+        run: node .github/scripts/estado.mjs "$RUNNER_TEMP/estado.json"
+      - name: Guardar en la rama datos
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan datos-nuevo
+          git rm -rf --cached . > /dev/null
+          cp "$RUNNER_TEMP/estado.json" estado.json
+          git add estado.json
+          git commit -m "Estado $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -f origin datos-nuevo:datos
