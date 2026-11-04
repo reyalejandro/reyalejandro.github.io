@@ -22,7 +22,9 @@
 <link rel="icon" data-icono href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23000'/%3E%3Cpath d='M16 16c-2.2-3.1-3.9-4.6-6-4.6a4.6 4.6 0 0 0 0 9.2c2.1 0 3.8-1.5 6-4.6s3.9-4.6 6-4.6a4.6 4.6 0 0 1 0 9.2c-2.1 0-3.8-1.5-6-4.6Z' fill='none' stroke='%23F4F4F2' stroke-width='2.6' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..700&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..700&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..700&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..700&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&display=swap"></noscript>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"Person","name":"Alejandro Rey","jobTitle":"DevOps Engineer","address":{"@type":"PostalAddress","addressLocality":"Buenos Aires","addressCountry":"AR"},"sameAs":["https://www.linkedin.com/in/alejandro-joaquin-rey/"]}
 </script>
@@ -145,7 +147,7 @@ section{scroll-margin-top:var(--barra)}
 .perfil h2{margin:0;font-size:clamp(2.2rem,4.2vw,3.6rem);view-timeline:--perfil}
 @supports (animation-timeline:view()){
   .perfil h2 .palabra{animation:encender linear both;animation-timeline:--perfil;animation-range:cover calc(8% + var(--i) * 1.4%) cover calc(16% + var(--i) * 1.4%)}
-  @keyframes encender{from{opacity:.14}}
+  @keyframes encender{from{color:#6b6b6b}}
 }
 .rasgos{margin:48px 0 0;padding:0;list-style:none;display:grid}
 .rasgos li{display:flex;justify-content:space-between;gap:16px;padding:16px 0;border-top:1px solid var(--borde-suave);color:var(--suave)}
@@ -1096,7 +1098,9 @@ import('https://cdn.jsdelivr.net/npm/number-flow@0.6.2/+esm').then(() => {
   const pista = document.querySelector('[data-marquesina] .pista'); pista.innerHTML += pista.innerHTML;
   let x = 0, vel = 0, ultimo = scrollY, dir = -1;
   addEventListener('scroll', () => { const d = scrollY - ultimo; ultimo = scrollY; vel = Math.min(30, Math.abs(d)); if (d) dir = d > 0 ? -1 : 1; }, { passive: true });
-  if (!quieto) (function mover() { x += dir * (0.6 + vel); vel *= .9; const w = pista.scrollWidth / 2; if (x <= -w) x += w; if (x > 0) x -= w; pista.style.transform = `translateX(${x}px)`; requestAnimationFrame(mover); })();
+  let enVista = false;
+  const mover = () => { if (!enVista) return; x += dir * (0.6 + vel); vel *= .9; const w = pista.scrollWidth / 2; if (x <= -w) x += w; if (x > 0) x -= w; pista.style.transform = `translateX(${x}px)`; requestAnimationFrame(mover); };
+  if (!quieto) new IntersectionObserver(([e]) => { const antes = enVista; enVista = e.isIntersecting; if (enVista && !antes) requestAnimationFrame(mover); }).observe(pista);
 
   // Constelación, solo en el inicio: puntos que derivan y se unen por cercanía; el puntero también une.
   const c = document.querySelector('[data-constelacion]'), ctx = c.getContext('2d'); let W, H, px = -999, py = -999, activo = false;
