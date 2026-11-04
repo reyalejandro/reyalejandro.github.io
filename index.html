@@ -148,10 +148,9 @@ section{scroll-margin-top:var(--barra)}
 }
 .rasgos{margin:48px 0 0;padding:0;list-style:none;display:grid}
 .rasgos li{display:flex;justify-content:space-between;gap:16px;padding:16px 0;border-top:1px solid var(--borde-suave);color:var(--suave)}
-.rasgos li span:last-child{color:var(--apagado)}
 
 /* Corrida del pipeline, en vidrio */
-.corrida{position:relative;margin:0;background:var(--vidrio);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-radius:var(--r-m);padding:18px 20px 16px;box-shadow:inset 0 0 0 1px var(--borde),inset 0 1px 0 rgba(255,255,255,.08),0 40px 80px -40px rgba(0,0,0,.9);font-family:var(--mono);font-size:.8125rem;overflow:hidden}
+.corrida{position:relative;margin:0;background:#0A0A0A;border-radius:var(--r-m);padding:18px 20px 16px;box-shadow:inset 0 0 0 1px var(--borde);font-family:var(--mono);font-size:.8125rem;overflow:hidden}
 .corrida header{display:flex;align-items:center;gap:10px;margin-bottom:18px;color:var(--apagado)}
 .corrida header>*{white-space:nowrap}
 .corrida header b{color:var(--texto);font-weight:500}
@@ -176,15 +175,14 @@ section{scroll-margin-top:var(--barra)}
 .etapa[data-paso] .nodo{background:var(--texto);box-shadow:0 0 16px rgba(255,255,255,.25)}
 .etapa[data-paso] .nodo svg{stroke-dashoffset:0;transition:stroke-dashoffset .25s ease .05s}
 .etapa[data-paso]{color:var(--texto)}
-.log{margin:0;padding:14px 0 0;border-top:1px solid var(--borde-suave);list-style:none;display:grid;gap:6px;min-height:11.4em}
-.log li{display:grid;grid-template-columns:3.8em 1fr;gap:10px;color:var(--suave);opacity:0;transform:translateY(4px)}
+.log{margin:0;padding:14px 0 0;border-top:1px solid var(--borde-suave);list-style:none;display:grid;gap:6px;min-height:8.6em}
+.log li{display:grid;grid-template-columns:1fr;gap:10px;color:var(--suave);opacity:0;transform:translateY(4px)}
 .log li[data-visible]{opacity:1;transform:none;transition:opacity .25s ease,transform .25s ease}
-.log .t{color:var(--apagado);font-variant-numeric:tabular-nums}
+.pie-corrida{display:flex;justify-content:flex-end;margin:10px 0 0;min-height:30px}
 .log .tilde{width:12px;height:12px;margin:0 3px -1px 0;stroke:var(--texto);stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round}
 
 /* Experiencia */
-.experiencia .envoltura{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,8fr);gap:48px}
-.experiencia .titulo-seccion{position:sticky;top:calc(var(--barra) + 24px);align-self:start}
+.linea-tiempo{max-width:860px}
 .linea-tiempo{position:relative;margin:0;padding:0 0 0 30px;list-style:none}
 .linea-tiempo::before,.linea-tiempo::after{content:"";position:absolute;left:5px;top:12px;bottom:12px;width:1px;background:var(--borde)}
 .linea-tiempo::after{background:var(--texto);transform-origin:top}
@@ -220,7 +218,8 @@ section{scroll-margin-top:var(--barra)}
 }
 
 /* Proyecto */
-.proyecto{background:var(--superficie);border-radius:var(--r-l);padding:40px;box-shadow:inset 0 0 0 1px var(--borde-suave),inset 0 1px 0 rgba(255,255,255,.06)}
+.proyecto{padding:0}
+#t-proy{margin-bottom:12px}
 .proyecto h3{margin:0;font-size:clamp(2rem,3.4vw,2.75rem)}
 .proyecto .donde{margin:8px 0 28px;color:var(--apagado)}
 .proyecto-cuerpo{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:48px;align-items:center}
@@ -244,18 +243,18 @@ section{scroll-margin-top:var(--barra)}
 .arquitectura.vertical{display:none;max-width:420px;margin-inline:auto}
 .pieza-texto{margin:0;min-height:3.2em;max-width:34em;font-size:1.0625rem;line-height:1.5;color:var(--suave)}
 .pieza-texto b{font-weight:600;color:var(--texto)}
-.pausa{margin:12px 0 0;min-height:44px;padding:0 16px;border:0;border-radius:999px;background:var(--vidrio);color:var(--apagado);font-size:.875rem;cursor:pointer;box-shadow:inset 0 0 0 1px var(--borde);transition:color .15s ease,box-shadow .15s ease}
-.pausa:hover{color:var(--texto);box-shadow:inset 0 0 0 1px rgba(255,255,255,.4)}
+.pausa{margin:8px 0 0;min-height:44px;padding:0;border:0;background:none;color:var(--apagado);font-size:.875rem;cursor:pointer;text-decoration:underline;text-underline-offset:.24em;transition:color .15s ease}
+.pausa:hover{color:var(--texto)}
 .solo-impresion{display:none}
-.telefono{margin:0;padding:7px;border-radius:34px;background:linear-gradient(160deg,#3a3a3a,#0d0d0d 40%,#2a2a2a);box-shadow:inset 0 0 0 1px rgba(255,255,255,.18),0 40px 80px -40px rgba(0,0,0,.95);transform:perspective(900px) rotateX(var(--ry,0deg)) rotateY(var(--rx,0deg));transition:transform var(--resorte-t) var(--resorte)}
-.pantalla{position:relative;aspect-ratio:390/844;border-radius:27px;overflow:hidden;background:#111}
+.telefono{margin:0;border-radius:24px;overflow:hidden;box-shadow:0 0 0 1px var(--borde)}
+.pantalla{position:relative;aspect-ratio:390/844;overflow:hidden;background:#111}
 .pantalla img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .6s ease}
 .pantalla img[data-actual]{opacity:1}
 
 /* Stack */
-.stack .envoltura{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,8fr);gap:48px}
-.stack .titulo-seccion{position:sticky;top:calc(var(--barra) + 24px);align-self:start}
-.grupos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:40px 44px}
+
+.grupos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:40px 44px}
+@media (max-width:1100px){.grupos{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .grupo h3{margin:0 0 14px;font-size:1.6rem}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none}
 .chip{display:inline-flex;align-items:center;gap:8px;min-height:36px;font-size:.875rem;color:var(--suave);border:0;padding:6px 14px 6px 11px;border-radius:999px;background:var(--vidrio);box-shadow:inset 0 0 0 1px var(--borde)}
@@ -296,14 +295,12 @@ footer a:hover{color:var(--texto)}
 
 /* Tablet y celular */
 @media (max-width:960px){
-  .perfil .envoltura,.experiencia .envoltura,.stack .envoltura{grid-template-columns:minmax(0,1fr);gap:40px}
-  .experiencia .titulo-seccion,.stack .titulo-seccion{position:static;margin-bottom:0}
+  .perfil .envoltura{grid-template-columns:minmax(0,1fr);gap:40px}
   .proyecto-cuerpo{grid-template-columns:minmax(0,1fr)}
   .telefono{width:min(220px,62%);margin-inline:auto}
 }
 @media (max-width:900px){
   .bloque{padding:96px 0}
-  .proyecto{padding:22px}
   .grupos{grid-template-columns:minmax(0,1fr);gap:32px}
   .arquitectura:not(.vertical){display:none}
   .arquitectura.vertical{display:block}
@@ -331,7 +328,7 @@ footer a:hover{color:var(--texto)}
   .log li{opacity:1;transform:none}
   .etapas .avance{transform:scaleX(1)}
   .linea-tiempo::after{transform:none}
-  .boton:active,button.chip:active,.telefono,.arquitectura [data-pieza][data-activa]{transform:none}
+  .boton:active,button.chip:active,.arquitectura [data-pieza][data-activa]{transform:none}
 }
 @media (prefers-reduced-transparency:reduce){.barra::before,.corrida,.cristal,.dock{backdrop-filter:none;-webkit-backdrop-filter:none}.barra::before,.dock{background:#000}.grano{display:none}}
 
@@ -443,13 +440,13 @@ footer a:hover{color:var(--texto)}
       <div>
         <h2 id="t-perfil" class="serif" data-encender data-t="perfil">Armo el camino que lleva el código de un commit a producción, y las pruebas que lo cuidan.</h2>
         <ul class="rasgos">
-          <li><span data-t="r1">Foco largo en un mismo problema</span><span data-t="r1b">Concentración</span></li>
-          <li><span data-t="r2">Mi mejor trabajo sale en equipo, con buen clima</span><span data-t="r2b">Equipo</span></li>
-          <li><span data-t="r3">Siempre probando herramientas nuevas</span><span data-t="r3b">Curiosidad</span></li>
+          <li><span data-t="r1">Foco largo en un mismo problema</span></li>
+          <li><span data-t="r2">Mi mejor trabajo sale en equipo, con buen clima</span></li>
+          <li><span data-t="r3">Siempre probando herramientas nuevas</span></li>
         </ul>
       </div>
       <figure class="corrida" aria-label="Resumen del perfil, presentado como una corrida de pipeline" data-t-aria="corrida" data-corrida>
-        <header><span>alejandro-rey / cv</span><b>main</b><span class="duracion" aria-hidden="true"><number-flow data-duracion data-decimales>0</number-flow> s</span><span class="estado-run" data-estado-run>en curso</span><button class="repetir" type="button" data-repetir data-t="repetir">Volver a correr</button></header>
+        <header><span>alejandro-rey / cv</span><b>main</b><span class="duracion" aria-hidden="true"><number-flow data-duracion data-decimales>0</number-flow> s</span><span class="estado-run" data-estado-run>en curso</span></header>
         <span class="rastro" aria-hidden="true"></span>
         <div class="etapas" aria-hidden="true">
           <span class="avance" data-avance></span>
@@ -460,13 +457,13 @@ footer a:hover{color:var(--texto)}
           <div class="etapa"><span class="nodo"><svg viewBox="0 0 24 24"><path d="M5 12.5 10 17l9-10"/></svg></span>deploy</div>
         </div>
         <ul class="log">
-          <li><span class="t">00:01</span><span><svg class="tilde" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 10 17l9-10"/></svg><span data-t="l1">2 años en DevOps (Tsoft)</span></span></li>
-          <li><span class="t">00:04</span><span><svg class="tilde" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 10 17l9-10"/></svg><span data-t="l2">Jenkins, Azure DevOps, Docker y Kubernetes</span></span></li>
-          <li><span class="t">00:09</span><span><svg class="tilde" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 10 17l9-10"/></svg><span data-t="l3">Selenium, JUnit, JMeter y Cucumber</span></span></li>
-          <li><span class="t">00:12</span><span><svg class="tilde" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 10 17l9-10"/></svg><span data-t="l4">CyberArk, Dynatrace y SonarQube</span></span></li>
-          <li><span class="t">00:16</span><span><svg class="tilde" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 10 17l9-10"/></svg><span data-t="l5">Ecommerce propio con Astro, Medusa y PostgreSQL</span></span></li>
-          <li><span class="t">00:18</span><span data-t="l6">Listo para el próximo equipo.</span></li>
+          <li><span><svg class="tilde" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 10 17l9-10"/></svg><span data-t="l1">2 años en DevOps (Tsoft)</span></span></li>
+          <li><span><svg class="tilde" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 10 17l9-10"/></svg><span data-t="l2">Jenkins, Azure DevOps, Docker y Kubernetes</span></span></li>
+          <li><span><svg class="tilde" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 10 17l9-10"/></svg><span data-t="l3">Selenium, JUnit, JMeter y Cucumber</span></span></li>
+          <li><span><svg class="tilde" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 10 17l9-10"/></svg><span data-t="l4">CyberArk, Dynatrace y SonarQube</span></span></li>
+          <li><span><svg class="tilde" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 10 17l9-10"/></svg><span data-t="l5">Ecommerce propio con Astro, Medusa y PostgreSQL</span></span></li>
         </ul>
+        <p class="pie-corrida"><button class="repetir" type="button" data-repetir data-t="repetir">Volver a correr</button></p>
       </figure>
     </div>
   </section>
@@ -512,9 +509,8 @@ footer a:hover{color:var(--texto)}
 
   <section class="bloque" id="proyecto" aria-labelledby="t-proy">
     <div class="envoltura">
-      <h2 id="t-proy" class="serif titulo-seccion" data-t="proy">Proyecto <em>destacado</em></h2>
+      <h2 id="t-proy" class="serif titulo-seccion" data-t="proy-titulo">Ecommerce de Master Pet</h2>
       <article class="proyecto">
-        <h3 class="serif" data-t="proy-titulo">Ecommerce de Master Pet</h3>
         <p class="donde" data-t="proy-donde">Tienda de productos de higiene para mascotas en <a href="https://masterpet.com.ar" target="_blank" rel="noopener">masterpet.com.ar</a></p>
         <div class="proyecto-cuerpo">
         <div>
@@ -609,9 +605,9 @@ const EN = {
   'bajada':'I build CI/CD pipelines and automated tests that make shipping safe. I did it for banks at Tsoft and now apply it to my own ecommerce, from the database to checkout.',
   'dato-1':'2 years of DevOps', 'dato-2':'250+ automated tests',
   'perfil':'I build the path that takes code from a commit to production, and the tests that guard it.',
-  'r1':'Long focus on a single problem', 'r1b':'Focus', 'r2':'My best work happens in a team, with a good atmosphere', 'r2b':'Teamwork', 'r3':'Always trying new tools', 'r3b':'Curiosity',
+  'r1':'Long focus on a single problem', 'r2':'My best work happens in a team, with a good atmosphere', 'r3':'Always trying new tools',
   'corrida':'Profile summary, shown as a pipeline run', 'repetir':'Run again',
-  'l1':'2 years in DevOps (Tsoft)', 'l2':'Jenkins, Azure DevOps, Docker and Kubernetes', 'l3':'Selenium, JUnit, JMeter and Cucumber', 'l4':'CyberArk, Dynatrace and SonarQube', 'l5':'Own ecommerce with Astro, Medusa and PostgreSQL', 'l6':'Ready for the next team.',
+  'l1':'2 years in DevOps (Tsoft)', 'l2':'Jenkins, Azure DevOps, Docker and Kubernetes', 'l3':'Selenium, JUnit, JMeter and Cucumber', 'l4':'CyberArk, Dynatrace and SonarQube', 'l5':'Own ecommerce with Astro, Medusa and PostgreSQL',
   'mp-titulo':'Full stack developer at Master Pet', 'mp-donde':'2026 – present. Own project, remote.', 'mp-alt':'Master Pet store home page', 'mp-ir':'Visit the store',
   'mp1':'Storefront in Astro and TypeScript; Medusa backend on Node.js and PostgreSQL.',
   'mp2':'Payments integration with Mercado Pago Checkout Pro and shipping quotes by postal code.',
@@ -625,7 +621,7 @@ const EN = {
   'ts4':'Virtual machines managed and monitored with CyberArk and Dynatrace.',
   'ts5':'Two Jira instances kept in sync with Automation Rules.',
   'web-titulo':'Web developer at Master Pet', 'web-donde':'Jun – Jul 2021. Freelance, remote.', 'web1':'First brand website: development, design, content and hosting.',
-  'proy':'Featured <em>project</em>', 'proy-titulo':'Master Pet ecommerce',
+  'proy-titulo':'Master Pet ecommerce',
   'proy-donde':'Pet hygiene products store at <a href="https://masterpet.com.ar" target="_blank" rel="noopener">masterpet.com.ar</a>',
   'arq':'Architecture: the Astro storefront talks to the Medusa API, which stores data in PostgreSQL and integrates Mercado Pago, shipping quotes, n8n and Sentry.',
   'p-tienda':'Storefront', 'p-tienda-s':'Astro and TypeScript', 'p-api':'Commerce API', 'p-api-s':'Medusa on Node.js', 'p-datos':'Database', 'p-pagos':'Payments', 'p-envios':'Shipping', 'p-envios-s':'by postal code', 'p-oper':'Operations', 'p-oper-s':'n8n and Sentry',
@@ -760,7 +756,7 @@ encender();
     const inicio = performance.now(); marcar(0); clearInterval(reloj); reloj = setInterval(() => marcar((performance.now() - inicio) / 1000), 200);
     avance.animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], { duration: paso * (etapas.length - 1), delay: 350, easing: 'linear', fill: 'forwards' });
     etapas.forEach((e, i) => setTimeout(() => { e.toggleAttribute('data-paso', true); lineas[i]?.toggleAttribute('data-visible', true); }, 350 + i * paso));
-    setTimeout(() => { lineas.at(-1).toggleAttribute('data-visible', true); aprobar(); raiz.removeAttribute('data-corriendo'); repetir.toggleAttribute('data-listo', true); }, 350 + etapas.length * paso + 120);
+    setTimeout(() => { aprobar(); raiz.removeAttribute('data-corriendo'); repetir.toggleAttribute('data-listo', true); }, 350 + etapas.length * paso + 120);
   }
 })();
 
@@ -822,17 +818,6 @@ encender();
     clearInterval(reloj); reloj = null;
     if (e.isIntersecting) reloj = setInterval(pasar, 4200);
   }, { threshold: .3 }).observe(texto.parentElement);
-})();
-
-// Celular: se inclina hacia el puntero (solo con mouse) y vuelve con el resorte al salir.
-(function inclinar(){
-  const tel = document.querySelector('[data-telefono]');
-  if (!tel || quieto || !matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-  tel.addEventListener('pointermove', e => {
-    const r = tel.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
-    tel.style.transitionDuration = '.12s'; tel.style.setProperty('--rx', `${x * 16}deg`); tel.style.setProperty('--ry', `${-y * 12}deg`);
-  });
-  tel.addEventListener('pointerleave', () => { tel.style.transitionDuration = ''; tel.style.setProperty('--rx', '0deg'); tel.style.setProperty('--ry', '0deg'); });
 })();
 
 // Stack: cada herramienta marca dónde la usé.
