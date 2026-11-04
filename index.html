@@ -107,9 +107,9 @@ em{font-family:var(--serif);font-style:italic;font-weight:400;color:var(--apagad
 .ciudad .fina{--mx:50%;--my:42%;--r:2600px;-webkit-mask-image:radial-gradient(circle var(--r) at var(--mx) var(--my),#000 55%,transparent 100%);mask-image:radial-gradient(circle var(--r) at var(--mx) var(--my),#000 55%,transparent 100%);transition:--r 1s var(--ease);animation:enfocar 1.4s var(--ease) .2s backwards}
 @keyframes enfocar{from{--r:0px}}
 .hero[data-foco] .ciudad .fina{--r:420px}
-.trafico{position:fixed;inset:0;z-index:-2;width:100%;height:100%;pointer-events:none}
+.trafico{position:absolute;inset:0;z-index:-2;width:100%;height:100%;pointer-events:none}
 /* Fondo de toda la página: la misma ciudad, en puntos gruesos y tenues, que deriva con el scroll y se aclara bajo el puntero */
-.fondo{--fx:50vw;--fy:40vh;position:fixed;inset:0;z-index:-4;pointer-events:none;opacity:.26;-webkit-mask-image:radial-gradient(circle 480px at var(--fx) var(--fy),#000,rgba(0,0,0,.3));mask-image:radial-gradient(circle 480px at var(--fx) var(--fy),#000,rgba(0,0,0,.3))}
+.fondo{--fx:50vw;--fy:40vh;position:fixed;inset:0;z-index:-4;pointer-events:none;opacity:.18;-webkit-mask-image:radial-gradient(circle 480px at var(--fx) var(--fy),#000,rgba(0,0,0,.3));mask-image:radial-gradient(circle 480px at var(--fx) var(--fy),#000,rgba(0,0,0,.3))}
 @media (hover:none){.fondo{opacity:.13;-webkit-mask-image:none;mask-image:none}}
 .fondo::before{content:"";position:absolute;inset:-12% -4%;background:url(ciudad-puntos.png) center/cover;image-rendering:pixelated}
 @supports (animation-timeline:scroll()){
@@ -447,15 +447,9 @@ footer .copiado{flex-basis:100%;margin:0;min-height:1.4em;font-size:.8125rem;col
 .cita blockquote{margin:0 0 14px;font:400 clamp(1.5rem,2.4vw,2rem)/1.25 var(--serif)}
 .cita figcaption{color:var(--apagado)}
 .cita figcaption b{color:var(--texto);font-weight:500}
-/* Cómo está hecho */
-.insignias{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 28px;padding:0;list-style:none;font:400 .8125rem var(--mono)}
-.insignias li{display:inline-flex;border-radius:6px;overflow:hidden;box-shadow:inset 0 0 0 1px var(--borde)}
-.insignias span{padding:6px 10px;color:var(--apagado);background:#0e0e0e}
-.insignias b{padding:6px 10px;font-weight:500;color:#000;background:var(--texto)}
-.colofon{margin:0;padding-left:1.1em;display:grid;gap:8px;max-width:46em;color:var(--suave)}
 @media (max-width:960px){.principios,.actividad-cuerpo{grid-template-columns:minmax(0,1fr)}.actividad-cuerpo{gap:40px}}
 @media (prefers-reduced-motion:reduce){.constelacion,.cursor{display:none}.marquesina .pista{transform:none!important}}
-@media print{.lectura,.cartel,.marquesina,.constelacion,.cursor,.actividad,.recomendaciones,.hecho,.copiar-pie{display:none!important}.principios{grid-template-columns:1fr 1fr;gap:0 16px}.principios li{padding:4px 0}.principios h3{font-size:10pt;margin:0}.principios p{font-size:8.5pt}}
+@media print{.lectura,.cartel,.marquesina,.constelacion,.cursor,.actividad,.recomendaciones,.copiar-pie{display:none!important}.principios{grid-template-columns:1fr 1fr;gap:0 16px}.principios li{padding:4px 0}.principios h3{font-size:10pt;margin:0}.principios p{font-size:8.5pt}}
 </style>
 </head>
 <body style="color:#F4F4F2">
@@ -464,7 +458,6 @@ footer .copiado{flex-basis:100%;margin:0;min-height:1.4em;font-size:.8125rem;col
 <div class="lectura" aria-hidden="true"></div>
 <div class="cursor" aria-hidden="true" data-cursor></div>
 <div class="fondo" aria-hidden="true" data-fondo></div>
-<canvas class="trafico" aria-hidden="true" data-trafico></canvas>
 <div class="globo" id="globo" role="tooltip" hidden></div>
 <header class="barra" data-barra>
   <div class="envoltura">
@@ -495,6 +488,7 @@ footer .copiado{flex-basis:100%;margin:0;min-height:1.4em;font-size:.8125rem;col
 <main id="principal">
   <section class="hero" id="inicio" aria-labelledby="nombre">
     <canvas class="constelacion" aria-hidden="true" data-constelacion></canvas>
+    <canvas class="trafico" aria-hidden="true" data-trafico></canvas>
     <figure class="ciudad" aria-hidden="true">
       <img class="gruesa" src="ciudad-puntos-gruesa.png" width="1920" height="1080" alt="">
       <img class="fina" src="ciudad-puntos.png" width="1920" height="1080" alt="" fetchpriority="high">
@@ -721,22 +715,6 @@ footer .copiado{flex-basis:100%;margin:0;min-height:1.4em;font-size:.8125rem;col
     </div>
   </section>
 
-  <section class="bloque hecho" id="como-esta-hecho" aria-labelledby="t-hecho">
-    <div class="envoltura">
-      <h2 id="t-hecho" class="serif titulo-seccion" data-t="hecho">Cómo está hecho este sitio</h2>
-      <ul class="insignias" aria-label="Estado del sitio" data-t-aria="insignias">
-        <li><span data-t="i-pruebas">Pruebas</span><b>83/83</b></li>
-        <li title="Escritorio: rendimiento, accesibilidad, buenas prácticas y SEO (04/11/2026)"><span>Lighthouse</span><b data-lighthouse>97 · 100 · 100 · 100</b></li>
-        <li><span data-t="i-disp">Disponibilidad</span><b data-uptime>—</b></li>
-      </ul>
-      <ul class="colofon">
-        <li data-t="h1">Un solo archivo HTML, sin build, publicado en GitHub Pages.</li>
-        <li data-t="h2">83 chequeos con Playwright en Chrome antes de cada publicación: computadora y celular, español e inglés, y con movimiento reducido.</li>
-        <li data-t="h3">Un workflow de GitHub Actions mide cada hora este sitio y masterpet.com.ar, y trae la actividad pública de GitHub.</li>
-        <li data-t="h4">Sin cookies propias ni analítica.</li>
-      </ul>
-    </div>
-  </section>
 </main>
 <footer><div class="envoltura">© 2026 Alejandro Rey<nav aria-label="Contacto" data-t-aria="n-contacto"><a href="mailto:reyalejandrojoaquin@gmail.com">reyalejandrojoaquin@gmail.com</a><button type="button" class="copiar-pie" data-copiar="reyalejandrojoaquin@gmail.com" aria-label="Copiar correo" data-t-aria="copiar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button><a href="https://www.linkedin.com/in/alejandro-joaquin-rey/" target="_blank" rel="me noopener">LinkedIn</a></nav><p class="copiado" data-copiado role="status" aria-live="polite"></p></div></footer>
 
@@ -786,11 +764,7 @@ const EN = {
   'pr4':'Decisions get written down.', 'pr4b':'Guides for the team and for AI agents, so whoever comes next can keep going without asking.',
   'act':'Activity', 'ver-github':'See on GitHub', 'menos':'Less', 'mas':'More', 'estado-t':'Availability', 'cargando':'Loading…',
   'estado-como':'Measured every hour by a GitHub Actions workflow.', 'ver-workflow':'See the workflow',
-  'rec':'Recommendations', 'hecho':'How this site is built', 'insignias':'Site status', 'i-pruebas':'Tests', 'i-disp':'Availability',
-  'h1':'A single HTML file, no build step, published on GitHub Pages.',
-  'h2':'83 Playwright checks in Chrome before every release: desktop and phone, Spanish and English, and with reduced motion.',
-  'h3':'A GitHub Actions workflow checks this site and masterpet.com.ar every hour, and pulls the public GitHub activity.',
-  'h4':'No first-party cookies or analytics.',
+  'rec':'Recommendations',
   'stack-ayuda':'Tap a tool to see where I used it.',
   'g1':'CI/CD and version control', 'g2':'Cloud, containers and infrastructure', 'g3':'Testing and quality', 'g4':'Security and monitoring', 'g5':'Development and data', 'g6':'Management and automation',
   'c-cucumber':'Cucumber & Gherkin', 'c-jira':'Jira & Automation Rules', 'c-ia':'AI agents',
@@ -844,7 +818,7 @@ encender();
 })();
 
 // Fondo: en el héroe los puntos se enfocan alrededor del puntero; en el resto, la ciudad tenue se aclara bajo el puntero.
-// Las luces circulan por toda la página y se frenan con la pestaña oculta.
+// Las luces circulan solo en el héroe, para no cruzar el texto, y se frenan fuera de pantalla o con la pestaña oculta.
 (function heroe(){
   const hero = document.getElementById('inicio'), fina = hero.querySelector('.ciudad .fina'), lienzo = document.querySelector('[data-trafico]'), fondo = document.querySelector('[data-fondo]');
   if (quieto) return;
@@ -882,7 +856,9 @@ encender();
   };
   medir(); new ResizeObserver(medir).observe(lienzo);
   luces = Array.from({ length: innerWidth < 700 ? 22 : 48 }, nueva);
-  const prender = () => { const antes = activo; activo = !document.hidden; if (activo && !antes) requestAnimationFrame(cuadro); };
+  let enVista = true;
+  const prender = () => { const antes = activo; activo = !document.hidden && enVista; if (activo && !antes) requestAnimationFrame(cuadro); };
+  new IntersectionObserver(([e]) => { enVista = e.isIntersecting; prender(); }).observe(hero);
   document.addEventListener('visibilitychange', prender); prender();
 })();
 
@@ -1165,7 +1141,6 @@ const RECOMENDACIONES = [];
       const barras = Array.from({ length: 60 - dias.length }, () => '<i data-vacio></i>').join('') + dias.map(([f, d]) => `<i ${d.ok === d.total ? '' : d.ok ? 'data-parcial' : 'data-caido'} title="${fecha(f)}: ${d.ok}/${d.total}"></i>`).join('');
       return `<li class="servicio" ${ult.ok === false ? 'data-caido' : ''}><div class="cabeza"><span class="nombre"><span class="punto" aria-hidden="true"></span>${sv.nombre}</span><span class="cifra">${pct.toFixed(pct === 100 ? 0 : 2).replace('.', lang === 'en' ? '.' : ',')} % · ${ult.ms ?? '—'} ms</span></div><div class="barras" aria-hidden="true">${barras}</div><span class="sr-solo">${ult.ok === false ? t('Sin respuesta en la última medición.', 'No response at the last check.') : t('Respondiendo.', 'Up.')}</span></li>`;
     }).join('');
-    const u = document.querySelector('[data-uptime]'); if (tot) u.textContent = (ok / tot * 100).toFixed(ok === tot ? 0 : 2).replace('.', lang === 'en' ? '.' : ',') + ' %';
   };
   const pintar = () => { calendario(); servicios(); };
   fetch(URL_DATOS, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(d => { datos = d; pintar(); }).catch(pintar);
