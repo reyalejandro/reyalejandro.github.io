@@ -243,8 +243,13 @@ section{scroll-margin-top:var(--barra)}
 .arquitectura.vertical{display:none;max-width:420px;margin-inline:auto}
 .pieza-texto{margin:0;min-height:3.2em;max-width:34em;font-size:1.0625rem;line-height:1.5;color:var(--suave)}
 .pieza-texto b{font-weight:600;color:var(--texto)}
-.pausa{margin:8px 0 0;min-height:44px;padding:0;border:0;background:none;color:var(--apagado);font-size:.875rem;cursor:pointer;text-decoration:underline;text-underline-offset:.24em;transition:color .15s ease}
-.pausa:hover{color:var(--texto)}
+.pausa{display:inline-flex;align-items:center;gap:8px;margin:8px 0 0;min-height:44px;padding:0 12px 0 10px;border:0;border-radius:var(--r-s);background:none;color:var(--suave);font-size:.875rem;cursor:pointer;transition:color .15s ease,background-color .15s ease}
+.pausa::before{content:"";width:10px;height:12px;background:currentColor;-webkit-mask:linear-gradient(90deg,#000 0 35%,transparent 35% 65%,#000 65%);mask:linear-gradient(90deg,#000 0 35%,transparent 35% 65%,#000 65%)}
+.pausa[hidden]{display:none}
+.pausa[data-quieto]::before{width:10px;-webkit-mask:none;mask:none;clip-path:polygon(0 0,100% 50%,0 100%)}
+/* Capa de estado de Material 3: 8 % al pasar, 12 % al presionar */
+.pausa:hover{color:var(--texto);background:rgb(244 244 242 / .08)}
+.pausa:active{background:rgb(244 244 242 / .12)}
 .solo-impresion{display:none}
 .telefono{margin:0;border-radius:24px;overflow:hidden;box-shadow:0 0 0 1px var(--borde)}
 .pantalla{position:relative;aspect-ratio:390/844;overflow:hidden;background:#111}
@@ -799,7 +804,7 @@ encender();
   const pasar = () => { mostrar(orden[i = (i + 1) % orden.length]); fotos.forEach((f, k) => f.toggleAttribute('data-actual', k === i % fotos.length)); };
   const mostrar = clave => { actual = clave; grupos.forEach(g => g.toggleAttribute('data-activa', g.dataset.pieza === clave)); document.querySelectorAll('.arquitectura .via').forEach(v => v.removeAttribute('data-activa')); viajar(vias[clave]); texto.innerHTML = dicho(clave); };
   const pausa = document.querySelector('[data-pausa]');
-  const rotuloPausa = () => pausa.textContent = reloj === 'quieto' ? t('Seguir recorrido', 'Resume tour') : t('Pausar recorrido', 'Pause tour');
+  const rotuloPausa = () => { pausa.textContent = reloj === 'quieto' ? t('Seguir recorrido', 'Resume tour') : t('Pausar recorrido', 'Pause tour'); pausa.toggleAttribute('data-quieto', reloj === 'quieto'); };
   const detener = () => { clearInterval(reloj); reloj = 'quieto'; rotuloPausa(); };
   const tomar = clave => { detener(); texto.setAttribute('aria-live', 'polite'); mostrar(clave); };
   pausa.addEventListener('click', () => {
