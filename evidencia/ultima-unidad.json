@@ -1,0 +1,25 @@
+{
+  "tipo": "extracto_saneado_de_registro_tecnico",
+  "proyecto": "MasterPet",
+  "fecha_de_ejecucion": "2026-10-28T03:46:12.906Z",
+  "alcance": "laboratorio_SIM",
+  "verificaciones": [
+    {
+      "nombre": "compra HTTP y recuperación worker",
+      "estado": "aprobado"
+    },
+    {
+      "nombre": "Redis: duplicados y persistencia",
+      "estado": "aprobado"
+    },
+    {
+      "nombre": "última unidad concurrente",
+      "estado": "aprobado"
+    }
+  ],
+  "fuente": "Extracto de un registro de ejecución local conservado por el autor; no es una consulta en vivo.",
+  "limites": [
+    "No acredita operación comercial ni ausencia absoluta de fallos.",
+    "No contiene pedidos, cuentas, credenciales ni datos de compradores."
+  ]
+}
