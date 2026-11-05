@@ -65,7 +65,7 @@
 html{background:#000!important;color:#F4F4F2}
 /* Instrumento técnico: Fraunces en títulos, Inter Tight para lectura; mono sólo en datos. */
 :root{
-  --bg:#000; --superficie:#0C0C0C; --superficie-2:#141414; --texto:#F4F4F2; --apagado:#9A9A9A; --suave:#C9C9C6;
+  --bg:#000; --superficie:#0C0C0C; --superficie-2:#141414; --texto:#F4F4F2; --apagado:#B8B8B6; --suave:#C9C9C6;
   --borde:rgba(255,255,255,.14); --borde-suave:rgba(255,255,255,.08); --vidrio:rgba(255,255,255,.04); --resalte:rgba(255,255,255,.09);
   --sans:"Inter Tight",system-ui,-apple-system,"Segoe UI",sans-serif; --serif:"Fraunces","Times New Roman",serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
   --ease:cubic-bezier(.16,1,.3,1);
@@ -180,7 +180,7 @@ section{scroll-margin-top:var(--barra)}
 .perfil h2{margin:0;font-size:clamp(2rem,3.4vw,3.1rem);line-height:1.15;letter-spacing:-.035em;view-timeline:--perfil}
 @supports (animation-timeline:view()){
   .perfil h2 .palabra{animation:encender linear both;animation-timeline:--perfil;animation-range:cover calc(8% + var(--i) * 1.4%) cover calc(16% + var(--i) * 1.4%)}
-  @keyframes encender{from{color:#6b6b6b}}
+  @keyframes encender{from{color:var(--apagado)}}
 }
 .rasgos{margin:36px 0 0;padding:0;list-style:none;display:grid;gap:4px}
 .rasgos li{display:flex;align-items:baseline;gap:14px;padding:12px 0;color:var(--suave)}
@@ -262,7 +262,7 @@ section{scroll-margin-top:var(--barra)}
 .proyecto h3{margin:0;font-size:clamp(2rem,3.4vw,2.75rem)}
 .proyecto .donde{margin:8px 0 28px;color:var(--apagado)}
 .proyecto-cuerpo{display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:48px;align-items:center;padding-top:20px}
-.arquitectura{width:100%;height:auto;display:block;margin:8px 0 24px;background-image:linear-gradient(var(--borde-suave) 1px,transparent 1px),linear-gradient(90deg,var(--borde-suave) 1px,transparent 1px);background-size:24px 24px;border-block:1px solid var(--borde);padding-block:24px}
+.arquitectura{width:100%;height:auto;display:block;margin:8px 0 24px;border-block:1px solid var(--borde);padding-block:24px}
 .arquitectura .caja{fill:#101010;stroke:#606060;stroke-width:1}
 .arquitectura .caja.central{fill:var(--texto);stroke:none}
 .arquitectura text{font:500 13px var(--sans);fill:var(--texto)}
@@ -297,9 +297,10 @@ section{scroll-margin-top:var(--barra)}
 
 /* Stack */
 
-.grupos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:40px 44px}
-@media (max-width:1100px){.grupos{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.grupo h3{margin:0 0 20px;font:500 1.125rem/1.35 var(--sans);padding-bottom:12px;border-bottom:1px solid var(--borde);color:var(--texto)}
+.grupo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2.4fr);align-items:center;gap:8px 32px;padding:14px 0;border-top:1px solid var(--borde)}
+.grupo:first-child{border-top:0}
+.grupo h3{margin:0;font:500 1.125rem/1.35 var(--sans);color:var(--texto)}
+@media (max-width:640px){.grupo{grid-template-columns:minmax(0,1fr);gap:4px;padding:12px 0}}
 .chips{display:flex;flex-wrap:wrap;gap:4px 8px;margin:0;padding:0;list-style:none}
 .chip{display:inline-flex;align-items:center;gap:8px;min-height:44px;font-size:.9375rem;color:var(--suave);border:0;padding:8px 10px;border-radius:4px;background:transparent;box-shadow:none}
 .chip .ico{width:15px;height:15px;opacity:.85}
@@ -351,7 +352,6 @@ footer a:hover{color:var(--texto)}
 }
 @media (max-width:900px){
   .bloque{padding:96px 0}
-  .grupos{grid-template-columns:minmax(0,1fr);gap:32px}
   .arquitectura:not(.vertical){display:none}
   .arquitectura.vertical{display:block}
   .hero-copia{padding:96px 20px 40px}
@@ -414,7 +414,8 @@ footer a:hover{color:var(--texto)}
   .proyecto h3{font-size:12pt}
   .proyecto-cuerpo{display:block}
   .solo-impresion{display:grid;gap:2px;margin:0;padding-left:1.1em}
-  .grupos{grid-template-columns:repeat(3,1fr);gap:8px 16px}
+  .grupos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 16px}
+  .grupo{display:block;padding:0;border:0}
   .grupo h3{font-size:10pt;margin-bottom:4px}
   .chip{box-shadow:none;padding:0 6px 0 0;background:none;min-height:0;color:#111}
   h2,h3{break-after:avoid}
@@ -458,9 +459,16 @@ footer .copiado{flex-basis:100%;margin:0;min-height:1.4em;font-size:.8125rem;col
 /* Cómo trabajo */
 .como-img{margin:0 0 40px;max-width:1060px}
 .trabajo-asi .envoltura{display:block}
-.principios{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:40px 56px;max-width:none}
-.principios li{padding:24px 0;border-top:1px solid var(--borde)}
-.principios h3{margin:0 0 12px;font:500 clamp(1.35rem,2vw,1.7rem)/1.25 var(--sans);letter-spacing:-.02em}
+.principios{margin:0;padding:0;list-style:none;display:grid;max-width:none}
+.principios li{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,320px);grid-template-areas:"titulo diagrama" "pie diagrama";gap:12px clamp(20px,6vw,80px);padding:20px 0;border-top:1px solid var(--borde)}
+.principios h3{grid-area:titulo;align-self:end;margin:0;font:500 clamp(1.35rem,2vw,1.7rem)/1.25 var(--sans);letter-spacing:-.02em}
+@media screen{
+  .principios li:first-child{grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);padding-block:0 clamp(24px,4vw,56px);border-top:0}
+  .principios li:first-child h3{font:400 clamp(1.85rem,4vw,3.6rem)/1.03 var(--serif);text-wrap:balance}
+}
+@media screen and (max-width:640px){
+  .principios li,.principios li:first-child{grid-template-columns:minmax(0,1fr);grid-template-areas:"titulo" "diagrama" "pie"}
+}
 .principios p{margin:0;color:var(--suave);max-width:34em}
 /* Actividad */
 .actividad-cuerpo{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:56px;align-items:start}
@@ -492,12 +500,12 @@ footer .copiado{flex-basis:100%;margin:0;min-height:1.4em;font-size:.8125rem;col
 .cita blockquote{margin:0 0 14px;font:400 clamp(1.5rem,2.4vw,2rem)/1.25 var(--serif)}
 .cita figcaption{color:var(--apagado)}
 .cita figcaption b{color:var(--texto);font-weight:500}
-@media (max-width:960px){.principios,.actividad-cuerpo{grid-template-columns:minmax(0,1fr)}.actividad-cuerpo{gap:40px}}
+@media (max-width:960px){.actividad-cuerpo{grid-template-columns:minmax(0,1fr)}.actividad-cuerpo{gap:40px}}
 @media (prefers-reduced-motion:reduce){.constelacion,.cursor{display:none}.marquesina .pista{transform:none!important}}
-@media print{.lectura,.cartel,.marquesina,.constelacion,.cursor,.actividad,.recomendaciones,.copiar-pie{display:none!important}.principios{grid-template-columns:1fr 1fr;gap:0 16px}.principios li{padding:4px 0}.principios h3{font-size:10pt;margin:0}.principios p{font-size:8.5pt}}
+@media print{.lectura,.cartel,.marquesina,.constelacion,.cursor,.actividad,.recomendaciones,.copiar-pie{display:none!important}.principios{grid-template-columns:1fr 1fr;gap:0 16px}.principios li{display:block;padding:4px 0}.principios h3{font-size:10pt;margin:0}.principios p{font-size:8.5pt}}
 
 /* Cuatro circuitos finitos; las etiquetas, no un párrafo, explican el recorrido. */
-.principios svg{width:100%;height:auto;display:block;margin-block:16px;background-image:radial-gradient(var(--borde) 1px,transparent 1px);background-size:16px 16px}
+.principios svg{grid-area:diagrama;width:100%;height:auto;display:block}
 .circuito-via{fill:none;stroke:#666;stroke-width:1.5}
 .circuito-haz{fill:none;stroke:var(--texto);stroke-width:2.5;stroke-dasharray:10 100;stroke-dashoffset:12;opacity:0}
 .circuito-nodo rect{fill:#101010;stroke:#777}
@@ -506,7 +514,7 @@ footer .copiado{flex-basis:100%;margin:0;min-height:1.4em;font-size:.8125rem;col
 [data-circuito][data-reproduciendo] .circuito-nodo rect{animation:circuito-paso .5s ease both;animation-delay:calc(var(--i)*.65s)}
 @keyframes circuito-viaje{0%{stroke-dashoffset:12;opacity:0}5%,85%{opacity:1}100%{stroke-dashoffset:-100;opacity:0}}
 @keyframes circuito-paso{50%{fill:#383838;stroke:var(--texto)}}
-.circuito-pie{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px 16px}.circuito-pie p{font:400 .875rem/1.5 var(--mono);color:var(--suave)}
+.circuito-pie{grid-area:pie;align-self:start;display:flex;align-items:center;flex-wrap:wrap;gap:8px 16px}.circuito-pie p{font:400 .875rem/1.5 var(--mono);color:var(--suave)}
 .circuito-pie button{min-height:44px;padding:8px 12px;border:1px solid #777;border-radius:6px;background:none;color:var(--texto);font:500 .875rem var(--sans);cursor:pointer}
 .circuito-pie button:hover{background:var(--resalte)}.circuito-pie button:active{background:#333}
 .circuito-impreso{display:none}
