@@ -538,14 +538,39 @@ html:has(.galeria-cv[open]){overflow:hidden}
 
 
 /* Lectura breve y evidencia: información quieta, sin otro momento animado. */
-.decision-caso{margin:32px 0 48px;max-width:76ch;scroll-margin-top:calc(var(--barra) + 24px)}
+.decision-caso{margin:32px 0 48px;scroll-margin-top:calc(var(--barra) + 24px)}
 .decision-caso h3{margin:0 0 24px;font-size:clamp(1.7rem,3vw,2.6rem);line-height:1.15;letter-spacing:-.035em}
-.decision-recorrido{margin:0}.decision-recorrido>div{display:grid;grid-template-columns:100px minmax(0,1fr);gap:20px;padding:16px 0;border-top:1px solid var(--borde-suave)}
-.decision-recorrido dt{font-size:.875rem;font-weight:600;color:var(--texto)}
-.decision-recorrido dd{margin:0;color:var(--apagado);line-height:1.6}
-.decision-alcance{margin:18px 0 0;color:var(--apagado);font-size:.8125rem;line-height:1.6}
-.evidencia-caso{display:inline-flex;min-height:44px;align-items:center;color:var(--texto);font-size:.875rem;text-underline-offset:4px}
-@media(max-width:600px){.decision-recorrido>div{grid-template-columns:1fr;gap:6px}.decision-caso{margin-bottom:32px}}
+.reserva{margin:0;max-width:850px}
+.reserva-escena{position:relative;isolation:isolate;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;min-height:300px;padding:90px 14px 24px}
+.reserva-vias{position:absolute;inset:0;z-index:-1;width:100%;height:100%;overflow:visible;fill:none;stroke:#888;stroke-width:1.25}
+.reserva-vias-movil{display:none}
+.reserva-vias circle{fill:var(--texto);stroke:none;opacity:0;offset-distance:0%}
+.reserva-actor{display:flex;align-items:center;flex-direction:column;text-align:center;gap:10px;min-width:0}
+.reserva-avatar{display:grid;place-items:center;width:48px;height:48px;border:1px solid #aaa;border-radius:50%;font:500 20px var(--sans);background:#080808}
+.reserva-actor>p{margin:0;font-size:1rem;line-height:1.4;color:var(--texto)}
+.reserva-estado{display:flex;align-items:center;justify-content:center;gap:7px;min-height:44px;font-size:.9375rem;line-height:1.35;color:var(--suave)}
+.reserva-estado svg{width:19px;height:19px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.reserva-confirmada{color:var(--texto)}
+.reserva-paquete{width:64px;height:48px;fill:#101010;stroke:var(--texto);stroke-width:1.5;stroke-linejoin:round}
+.reserva-stock{display:grid;font:400 .9375rem var(--mono);color:var(--texto)}
+.reserva-stock span{grid-area:1/1}
+.reserva-inicial{visibility:hidden}
+.reserva figcaption{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px 20px;padding-top:12px;border-top:1px solid var(--borde);color:var(--suave);font-size:.875rem}
+.reserva button{min-height:44px;padding:8px 12px;border:1px solid #777;border-radius:6px;background:none;color:var(--texto);font:500 .875rem var(--sans);cursor:pointer}
+.reserva button:hover{background:var(--resalte)}
+[data-reserva][data-reproduciendo] .reserva-vias circle{animation:reserva-pedir 1s var(--ease) both}
+[data-reserva][data-reproduciendo] .reserva-cierre{animation:reserva-confirmar .45s ease-out 1s both}
+[data-reserva][data-reproduciendo] .reserva-inicial{animation:reserva-inicial 1s step-end both}
+@keyframes reserva-pedir{0%{offset-distance:0%;opacity:0}8%,90%{opacity:1}100%{offset-distance:100%;opacity:0}}
+@keyframes reserva-confirmar{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+@keyframes reserva-inicial{0%{visibility:visible}100%{visibility:hidden}}
+@media(max-width:640px){
+ .reserva-escena{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:150px 150px;gap:0 12px;min-height:360px;padding:20px 0 20px}
+ .reserva-motor{grid-column:1/-1;grid-row:2;padding-top:34px}
+ .reserva-vias-escritorio{display:none}.reserva-vias-movil{display:block}
+ .reserva-estado{max-width:140px}
+}
+@media(prefers-reduced-motion:reduce){[data-reserva] .reserva-vias circle,[data-reserva] .reserva-cierre,[data-reserva] .reserva-inicial{animation:none!important}.reserva button{display:none}}
 @media print{.decision-caso{display:none}}
 </style>
 </head>
@@ -691,14 +716,27 @@ html:has(.galeria-cv[open]){overflow:hidden}
         <p class="donde" data-t="proy-donde">Tienda de productos de higiene para mascotas en <a href="https://masterpet.com.ar" target="_blank" rel="noopener">masterpet.com.ar</a></p>
         <section class="decision-caso" id="decision" aria-labelledby="t-decision">
           <h3 class="serif" id="t-decision" data-t="decision-titulo">La última unidad no se vende dos veces.</h3>
-          <dl class="decision-recorrido">
-            <div><dt data-t="decision-problema">Problema</dt><dd data-t="decision-problema-texto">Dos compradores pueden intentar llevarse la misma unidad. Que ambos vean stock no significa que ambos puedan comprarla.</dd></div>
-            <div><dt data-t="decision-opciones">Alternativas</dt><dd data-t="decision-opciones-texto">Descontar en cada navegador no coordina a los compradores. Corregir el stock después de vender deja el problema para la operación.</dd></div>
-            <div><dt data-t="decision-elegida">Decisión</dt><dd data-t="decision-elegida-texto">Centralizar inventario y reservas en Medusa, y probar la concurrencia junto con los cortes y reintentos del sistema.</dd></div>
-            <div><dt data-t="decision-resultado">Resultado</dt><dd data-t="decision-resultado-texto">El ensayo de última unidad concurrente pasó en el laboratorio, al igual que la recuperación del worker y la persistencia ante eventos duplicados.</dd></div>
-          </dl>
-          <p class="decision-alcance" data-t="decision-alcance">Ensayo técnico del 28/10/2026 con datos y proveedores simulados. No representa una venta comercial ni garantiza ausencia de fallos.</p>
-          <a class="evidencia-caso" href="evidencia/ultima-unidad.json" target="_blank" rel="noopener" data-t="decision-evidencia">Ver extracto del registro técnico (JSON) ↗</a>
+          <figure class="reserva" data-reserva>
+            <div class="reserva-escena" aria-hidden="true">
+              <svg class="reserva-vias reserva-vias-escritorio" viewBox="0 0 760 300" preserveAspectRatio="none"><path d="M130 112C130 12 380 12 380 112M630 112C630 12 380 12 380 112"/><circle r="4" style="offset-path:path('M130 112C130 12 380 12 380 112')"/><circle r="4" style="offset-path:path('M630 112C630 12 380 12 380 112')"/></svg>
+              <svg class="reserva-vias reserva-vias-movil" viewBox="0 0 360 360" preserveAspectRatio="none"><path d="M114 44C180 44 180 80 180 160M246 44C180 44 180 80 180 160M180 160V234"/><circle r="4" style="offset-path:path('M114 44C180 44 180 80 180 234')"/><circle r="4" style="offset-path:path('M246 44C180 44 180 80 180 234')"/></svg>
+              <div class="reserva-actor">
+                <span class="reserva-avatar">A</span><p data-t="reserva-a">Comprador A</p>
+                <div class="reserva-estado reserva-confirmada reserva-cierre"><svg viewBox="0 0 24 24"><path d="m4 12 5 5L20 6"/></svg><span data-t="reserva-confirmada">Reserva confirmada</span></div>
+              </div>
+              <div class="reserva-actor reserva-motor">
+                <svg class="reserva-paquete" viewBox="0 0 64 48"><path d="m7 13 25-10 25 10v23L32 46 7 36ZM7 13l25 11 25-11M32 24v22M20 8l25 11v10"/></svg>
+                <p data-t="reserva-medusa">Inventario en Medusa</p>
+                <div class="reserva-stock"><span class="reserva-inicial" data-t="reserva-una">1 unidad</span><span class="reserva-cierre" data-t="reserva-cero">0 disponibles</span></div>
+              </div>
+              <div class="reserva-actor">
+                <span class="reserva-avatar">B</span><p data-t="reserva-b">Comprador B</p>
+                <div class="reserva-estado reserva-cierre"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="m6 6 12 12"/></svg><span data-t="reserva-agotada">Producto agotado</span></div>
+              </div>
+            </div>
+            <p class="sr-solo" data-t="reserva-descripcion">Dos compradores solicitan la última unidad al mismo tiempo. Medusa coordina las reservas: uno obtiene la unidad y el otro recibe el aviso de producto agotado. Representación de una prueba de laboratorio.</p>
+            <figcaption><span data-t="reserva-laboratorio">Prueba de laboratorio · reserva de la última unidad</span><button type="button" data-repetir-reserva data-t="reserva-repetir">Repetir escena</button></figcaption>
+          </figure>
         </section>
         <div class="proyecto-cuerpo">
         <div>
@@ -851,17 +889,17 @@ console.log('%c¿Revisando el código? Bien ahí.%c\nEsta página es un solo HTM
 
 // Idioma: español escrito en la página; inglés en este diccionario. Las frases que arma el JavaScript usan t(es, en).
 const EN = {
+"reserva-a":"Buyer A",
+"reserva-b":"Buyer B",
+"reserva-medusa":"Inventory in Medusa",
+"reserva-una":"1 unit",
+"reserva-cero":"0 available",
+"reserva-confirmada":"Reservation confirmed",
+"reserva-agotada":"Product sold out",
+"reserva-laboratorio":"Lab test \u00b7 reserving the last unit",
+"reserva-repetir":"Replay scene",
+"reserva-descripcion":"Two buyers request the last unit at the same time. Medusa coordinates reservations: one buyer gets the unit and the other sees a sold-out notice. Illustration of a lab test.",
 "decision-titulo":"The last unit cannot be sold twice.",
-"decision-problema":"Problem",
-"decision-problema-texto":"Two buyers can try to purchase the same unit. Seeing stock does not mean both can buy it.",
-"decision-opciones":"Alternatives",
-"decision-opciones-texto":"Subtracting stock in each browser does not coordinate buyers. Correcting it after the sale pushes the problem into operations.",
-"decision-elegida":"Decision",
-"decision-elegida-texto":"Keep inventory and reservations in Medusa, and test concurrency alongside process interruptions and retries.",
-"decision-resultado":"Result",
-"decision-resultado-texto":"The concurrent last-unit test passed in the lab, as did worker recovery and persistence under duplicate events.",
-"decision-alcance":"Technical test dated 28 Oct 2026, using simulated data and providers. It does not represent a commercial sale or guarantee the absence of defects.",
-"decision-evidencia":"View the technical test excerpt (JSON) ↗",
 
   'leyenda-arq':'The animated path explains connections; it does not represent live activity.',
   'alcance-capturas':'Project screenshots show the recorded interface, not its current commercial status or a live purchase.',
@@ -1122,7 +1160,7 @@ encender();
 })();
 
 
-(function circuitos(){const esquemas=[...document.querySelectorAll('[data-circuito]')];const reproducir=el=>{el.removeAttribute('data-reproduciendo');if(quieto)return;el.getBoundingClientRect();el.setAttribute('data-reproduciendo','');};esquemas.forEach(el=>el.querySelector('[data-repetir-circuito]').addEventListener('click',()=>reproducir(el)));const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){reproducir(e.target);io.unobserve(e.target);}}),{threshold:.5});esquemas.forEach(el=>io.observe(el));})();
+(function circuitos(){const esquemas=[...document.querySelectorAll('[data-circuito],[data-reserva]')];const reproducir=el=>{el.removeAttribute('data-reproduciendo');if(quieto)return;el.getBoundingClientRect();el.setAttribute('data-reproduciendo','');};esquemas.forEach(el=>el.querySelector('[data-repetir-circuito],[data-repetir-reserva]').addEventListener('click',()=>reproducir(el)));const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){reproducir(e.target);io.unobserve(e.target);}}),{threshold:.5});esquemas.forEach(el=>io.observe(el));})();
 // Stack: cada herramienta marca dónde la usé.
 (function dondeLaUse(){
   const tareas = [...document.querySelectorAll('.trabajo li[data-usa]')];
