@@ -95,10 +95,12 @@ requestAnimationFrame(() => requestAnimationFrame(() => { if (quieto()) titulos.
   const caja = $('[data-marquesina]'); if (!caja) return;
   const filas = $$('.fila', caja).map(fila => {
     const pista = $('.pista', fila); pista.innerHTML += pista.innerHTML + pista.innerHTML;
-    const f = { pista, x: 0, lado: Number(fila.dataset.lado), pausa: false };
+    const f = { pista, x: 0, lado: Number(fila.dataset.lado), pausa: false, w: pista.scrollWidth / 3 };
     fila.addEventListener('pointerenter', () => { f.pausa = true; }); fila.addEventListener('pointerleave', () => { f.pausa = false; });
     return f;
   });
+  const anchos = () => filas.forEach(f => { f.w = f.pista.scrollWidth / 3; });
+  addEventListener('resize', anchos); document.fonts?.ready.then(anchos);
   let factor = 1, objetivo = 1, sentido = 1, ultimo = scrollY, antes = 0, enVista = false;
   addEventListener('scroll', () => { const d = scrollY - ultimo; ultimo = scrollY; objetivo = 1 + Math.min(Math.abs(d) / 16, 4); if (d) sentido = d > 0 ? 1 : -1; }, { passive: true });
   const mover = ahora => {
@@ -107,7 +109,7 @@ requestAnimationFrame(() => requestAnimationFrame(() => { if (quieto()) titulos.
     factor += (objetivo - factor) * .1; objetivo += (1 - objetivo) * .1;
     for (const f of filas) {
       if (f.pausa) continue;
-      const w = f.pista.scrollWidth / 3; f.x -= f.lado * sentido * 40 * factor * dt;
+      const w = f.w; f.x -= f.lado * sentido * 40 * factor * dt; // ancho medido una vez: leer scrollWidth en cada cuadro forzaba layout
       if (f.x <= -w) f.x += w; if (f.x > 0) f.x -= w;
       f.pista.style.transform = `translate3d(${f.x}px,0,0)`;
     }
@@ -275,7 +277,7 @@ const deHex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
   const ctx = cv.getContext('2d');
   const RAMPA = ' .·:-=+*#%@', CUBETAS = 7;
   let cw, ch, cols, filas, lum = null, lw = 0, lh = 0, dpr = 1, t = 0, antes = 0, ultimo = 0, corriendo = false;
-  let px = -1e4, py = -1e4, ox = -1e4, oy = -1e4, ondas = [];
+  let px = -1e4, py = -1e4, ox = -1e4, oy = -1e4, ondas = [], movido = 0;
   const img = new Image(); img.src = 'ciudad-puntos.png';
   function muestrear() {
     // La grilla de luminancia es 1,6 veces más alta que la pantalla para poder derivar con el scroll.
@@ -336,7 +338,9 @@ const deHex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
     ox += (px - ox) * .2; oy += (py - oy) * .2;
     if (!quieto()) t += dt;
     const cambiaColor = acercarTinte();
-    if (ahora - ultimo >= (ondas.length ? 33 : 50)) { const tx = px, ty = py; px = ox; py = oy; dibujar(); px = tx; py = ty; ultimo = ahora; }
+    // Rinde: a 30 cuadros mientras el puntero se mueve o hay una onda; si no, la onda lenta alcanza con 12.
+    const vivo = ondas.length || ahora - movido < 400 || Math.abs(px - ox) + Math.abs(py - oy) > 1;
+    if (ahora - ultimo >= (vivo ? 33 : 80)) { const tx = px, ty = py; px = ox; py = oy; dibujar(); px = tx; py = ty; ultimo = ahora; }
     if (quieto() && !cambiaColor && Math.abs(px - ox) + Math.abs(py - oy) < 1) { corriendo = false; return; }
     requestAnimationFrame(tic);
   };
@@ -346,7 +350,7 @@ const deHex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
     if (quieto() || e.button !== 0 || e.target.closest('a,button,input,label,select,textarea,[role="button"],iframe,.celular') || raiz.hasAttribute('data-sobre-bucle')) return;
     ondas.push({ x: e.clientX, y: e.clientY, t: performance.now() }); if (ondas.length > 3) ondas.shift(); pedir();
   });
-  addEventListener('pointermove', e => { px = e.clientX; py = e.clientY; if (ox < -1e3) { ox = px; oy = py; } pedir(); }, { passive: true });
+  addEventListener('pointermove', e => { px = e.clientX; py = e.clientY; movido = performance.now(); if (ox < -1e3) { ox = px; oy = py; } pedir(); }, { passive: true });
   document.documentElement.addEventListener('pointerleave', () => { px = py = -1e4; pedir(); });
   addEventListener('scroll', pedir, { passive: true });
   addEventListener('resize', medir);
@@ -355,11 +359,11 @@ const deHex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
   medir();
 })();
 
-// ——— Íconos junto a cada herramienta nombrada en Experiencia (se rehace después de cada cambio de idioma) ———
+// ——— Íconos junto a cada herramienta nombrada en las etapas del ciclo (se rehace después de cada cambio de idioma) ———
 const ICONOS = { 'GitHub Actions': 'i-githubactions', 'Google Cloud': 'i-googlecloud', 'Claude Code': 'i-claude', 'Mercado Pago': 'i-mercadopago', 'Azure DevOps': 'i-ciclo', 'PostgreSQL': 'i-postgresql', 'TypeScript': 'i-typescript', 'Kubernetes': 'i-kubernetes', 'Playwright': 'i-probeta', 'SonarQube': 'i-sonarqubeserver', 'Terraform': 'i-terraform', 'Dynatrace': 'i-dynatrace', 'Selenium': 'i-selenium', 'Cucumber': 'i-cucumber', 'CyberArk': 'i-escudo', 'Postman': 'i-postman', 'Ansible': 'i-ansible', 'Jenkins': 'i-jenkins', 'Node.js': 'i-nodedotjs', 'Medusa': 'i-medusa', 'Docker': 'i-docker', 'Sentry': 'i-sentry', 'JMeter': 'i-apachejmeter', 'Gradle': 'i-gradle', 'Maven': 'i-apachemaven', 'Astro': 'i-astro', 'JUnit': 'i-junit5', 'Codex': 'i-chip', 'Jira': 'i-jira', 'Xray': 'i-jira', 'AWS': 'i-nube', 'n8n': 'i-n8n', 'Git': 'i-git' };
 const patronIconos = new RegExp(`(?<![\\w.])(${Object.keys(ICONOS).map(k => k.replace(/[.]/g, '\\.')).join('|')})(?![\\w])`, 'g');
 function iconizar() {
-  $$('.acto ul li').forEach(li => {
+  $$('.etapa-datos dd').forEach(li => {
     if (li.querySelector('.herr-ico')) return;
     const texto = li.textContent; if (!patronIconos.test(texto)) return; patronIconos.lastIndex = 0;
     li.innerHTML = texto.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])).replace(patronIconos, (m) => `<span class="herr-ico"><svg aria-hidden="true"><use href="#${ICONOS[m]}"/></svg>${m}</span>`);
@@ -376,8 +380,11 @@ document.addEventListener('idioma', iconizar);
   const tonos = [1, 1.122, 1.26, 1.498, 1.682, 2, 2.245, 2.52];
   let actual = -1, pedido = false;
   const recorrido = () => Math.max(1, sec.offsetHeight - innerHeight);
+  const inicio = () => sec.getBoundingClientRect().top + scrollY;
+  const lugar = i => inicio() + recorrido() * (i + .5) / pasos.length;
   const elegir = i => {
     if (i === actual) return;
+    $$('dd[data-menciona], dd[data-atenua]', sec).forEach(dd => { dd.removeAttribute('data-menciona'); dd.removeAttribute('data-atenua'); });
     pasos.forEach((li, k) => { li.toggleAttribute('data-actual', k === i); li.toggleAttribute('data-pasado', k < i); });
     botones.forEach((b, k) => { b.setAttribute('aria-pressed', String(k === i)); b.toggleAttribute('data-pasada', k < i); });
     sec.style.setProperty('--c-act', pasos[i].style.getPropertyValue('--c'));
@@ -394,10 +401,29 @@ document.addEventListener('idioma', iconizar);
   };
   addEventListener('scroll', () => { if (!pedido) { pedido = true; requestAnimationFrame(medir); } }, { passive: true });
   addEventListener('resize', medir); medir();
-  botones.forEach((b, i) => b.addEventListener('click', () => {
-    const y = sec.getBoundingClientRect().top + scrollY + recorrido() * (i + .5) / pasos.length;
-    scrollTo({ top: y, behavior: quieto() ? 'auto' : 'smooth' }); elegir(i);
-  }));
+  botones.forEach((b, i) => b.addEventListener('click', () => { scrollTo({ top: lugar(i), behavior: quieto() ? 'instant' : 'smooth' }); elegir(i); }));
+  // Desde otra sección (Experiencia): salta a la etapa y marca la frase de esa empresa
+  window.cvIrEtapa = (i, empresa) => {
+    scrollTo({ top: lugar(i), behavior: 'instant' }); elegir(i);
+    if (!empresa) return;
+    $$('dt', pasos[i]).forEach(dt => { const dd = dt.nextElementSibling, si = dt.textContent.includes(empresa); dd?.toggleAttribute('data-menciona', si); dd?.toggleAttribute('data-atenua', !si); });
+  };
+  // Con la sección fija, cada paso de la rueda es una etapa (en el trackpad se juntan los deltas chicos). En la primera y la
+  // última etapa el paso siguiente sale de la sección, sin pasos muertos.
+  let acumulado = 0, bloqueo = 0;
+  addEventListener('wheel', e => {
+    const r = sec.getBoundingClientRect();
+    if (e.ctrlKey || r.top > 1 || r.bottom < innerHeight - 1 || Math.abs(e.deltaX) > Math.abs(e.deltaY)) { acumulado = 0; return; }
+    const sentido = Math.sign(e.deltaY), destino = actual + sentido;
+    if (destino < 0) { e.preventDefault(); scrollTo({ top: inicio() - 2, behavior: 'instant' }); return; }
+    if (destino >= pasos.length) { e.preventDefault(); scrollTo({ top: inicio() + recorrido() + 2, behavior: 'instant' }); return; }
+    e.preventDefault();
+    const ahora = performance.now();
+    acumulado += Math.abs(e.deltaY);
+    if (ahora < bloqueo || acumulado < 40) return;
+    acumulado = 0; bloqueo = ahora + 380;
+    scrollTo({ top: lugar(destino), behavior: 'instant' }); elegir(destino);
+  }, { passive: false });
   $('.espectro', sec).addEventListener('keydown', e => {
     const i = botones.indexOf(document.activeElement), d = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
     if (i < 0 || !d) return; e.preventDefault(); botones[(i + d + botones.length) % botones.length].focus();
@@ -630,6 +656,38 @@ if (matchMedia('(hover:hover) and (pointer:fine)').matches) {
   });
   const ponerTinte = () => raiz.style.setProperty('--tinte', `rgb(${tinteMeta.map(Math.round).join(' ')})`);
   document.addEventListener('tono', ponerTinte); ponerTinte();
+})();
+
+// ——— Experiencia: lo que hice en cada empresa vive en las etapas del ciclo. Acá, un botón por etapa con su color:
+// al pasar o enfocar se lee qué hice en esa etapa; al tocar lleva a la etapa del ∞ con la frase marcada. ———
+(function experiencia() {
+  const pasos = $$('[data-paso]');
+  const armar = () => $$('[data-empresa]').forEach(acto => {
+    const caja = $('[data-acto-etapas]', acto), empresa = acto.dataset.empresa;
+    const items = pasos.map((li, i) => {
+      const dt = $$('dt', li).find(d => d.textContent.includes(empresa));
+      return dt && { i, c: li.style.getPropertyValue('--c'), n: $('h3', li).textContent, texto: dt.nextElementSibling.innerHTML };
+    }).filter(Boolean);
+    caja.innerHTML = `<div class="acto-botones" role="group" aria-label="${t('Etapas del ciclo', 'Loop stages')}">${items.map((x, k) =>
+      `<button type="button" class="acto-etapa" style="--c:${x.c}" data-i="${x.i}" aria-pressed="${k === 0}"><span class="etapa-n">${String(x.i + 1).padStart(2, '0')}</span>${x.n}</button>`).join('')}</div>` +
+      `<p class="acto-detalle" aria-live="polite"></p>`;
+    const detalle = $('.acto-detalle', caja), bts = $$('.acto-etapa', caja);
+    const mostrar = k => {
+      bts.forEach((b, j) => b.setAttribute('aria-pressed', String(j === k)));
+      detalle.style.setProperty('--c', items[k].c); detalle.innerHTML = items[k].texto;
+      if (!quieto()) { detalle.removeAttribute('data-entra'); void detalle.offsetWidth; detalle.toggleAttribute('data-entra', true); }
+    };
+    bts.forEach((b, k) => {
+      b.addEventListener('pointerenter', () => mostrar(k)); b.addEventListener('focus', () => mostrar(k));
+      b.addEventListener('click', () => window.cvIrEtapa?.(items[k].i, empresa));
+    });
+    caja.querySelector('.acto-botones').addEventListener('keydown', e => {
+      const k = bts.indexOf(document.activeElement), d = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+      if (k < 0 || !d) return; e.preventDefault(); bts[(k + d + bts.length) % bts.length].focus();
+    });
+    mostrar(0);
+  });
+  document.addEventListener('idioma', armar); // después de iconizar, así el detalle trae los íconos
 })();
 
 // ——— PDF flotante: aparece después de la portada (en el celular desde el comienzo), se esconde en el ciclo fijo y en el contacto (ya tiene el suyo) y su anillo marca cuánto se leyó ———

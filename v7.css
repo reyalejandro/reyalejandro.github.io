@@ -749,7 +749,7 @@ html[data-vivo] .tray-pasos > li[data-actual] { visibility:visible; pointer-even
 
 /* ——— Retoques del 20/11: el tinte de la sección como color vivo de la página ——— */
 @property --tinte { syntax:"<color>"; inherits:true; initial-value:#8FA6FF; }
-:root { transition:--tinte .9s ease; }
+/* --tinte cambia sin transición en el :root: animarlo ahí recalculaba los estilos de toda la página en cada cuadro */
 .progreso { background:var(--tinte); box-shadow:0 0 12px var(--tinte); transition:background .9s ease; }
 ::selection { background:color-mix(in oklab,var(--tinte) 70%,#000); color:#fff; }
 /* Luz que sigue al puntero en las tarjetas; las de Backstage además se inclinan con resorte */
@@ -785,3 +785,34 @@ html[data-movimiento="off"] .pase { transform:none; }
 .pase::before { content:none; }
 /* Números del espectro con contraste AA: el color de la etapa aclarado (el azul de «Código» daba 4,2:1) */
 .espectro-etapa:not([aria-pressed="true"]) .etapa-n { color:color-mix(in oklab,var(--c) 62%,#fff); }
+
+/* ——— 20/11 noche ——— */
+/* Cromo de los nombres legible sobre negro: sin la banda oscura del medio, un horizonte claro y brillo frío */
+.acto-nombre.cromo { --cromo:linear-gradient(180deg,#ffffff 0%,#eef1ff 34%,#b9c3f2 47%,#8f9be0 50%,#f4f6ff 53%,#d3d9fb 78%,#a9b4ea 100%);
+  filter:drop-shadow(0 0 22px rgb(143 166 255 / .18)); }
+/* Experiencia: un botón por etapa con su color y el detalle que cambia al pasar */
+.acto-resumen { margin-top:14px; max-width:46ch; font-size:1.125rem; color:var(--tinta); text-wrap:pretty; }
+.acto-botones { display:flex; flex-wrap:wrap; gap:6px; margin-top:20px; }
+.acto-etapa { display:inline-flex; align-items:center; gap:8px; min-height:40px; padding:0 12px 0 6px; border:0; border-radius:10px; cursor:pointer;
+  font:500 .6875rem/1 var(--mono); letter-spacing:.06em; text-transform:uppercase; color:var(--suave);
+  background:linear-gradient(180deg,color-mix(in oklab,var(--c) 12%,transparent),rgb(255 255 255 / .02)); box-shadow:inset 0 0 0 1px rgb(255 255 255 / .08);
+  transition:color .2s ease, background .3s ease, box-shadow .3s ease, transform 600ms var(--resorte); }
+.acto-etapa .etapa-n { display:grid; place-items:center; width:26px; height:26px; border-radius:50%; font-size:.6875rem; color:color-mix(in oklab,var(--c) 62%,#fff); background:color-mix(in oklab,var(--c) 16%,transparent); }
+.acto-etapa:hover,.acto-etapa[aria-pressed="true"] { color:#fff; transform:translateY(-2px);
+  background:linear-gradient(180deg,color-mix(in oklab,var(--c) 38%,transparent),color-mix(in oklab,var(--c) 8%,transparent)); box-shadow:inset 0 0 0 1px color-mix(in oklab,var(--c) 75%,transparent), 0 10px 24px -12px var(--c); }
+.acto-etapa[aria-pressed="true"] .etapa-n { background:var(--c); color:#0A0A0A; }
+.acto-etapa:focus-visible { outline:2px solid var(--c); outline-offset:2px; }
+.acto-detalle { min-height:4.4em; margin-top:14px; padding-left:14px; max-width:58ch; border-left:2px solid var(--c,var(--azul)); color:var(--tinta); font-size:1.0625rem; line-height:1.5; transition:border-color .3s ease; }
+.acto-detalle[data-entra] { animation:entrar-panel .45s var(--salida) both; }
+.acto-detalle .herr-ico svg { fill:var(--c); }
+html:not([data-vivo]) .acto-etapas { display:none; }
+@media (prefers-reduced-motion:reduce) { .acto-detalle[data-entra] { animation:none; } }
+/* Ciclo: menos recorrido por etapa (la rueda va de a una) */
+.trayectoria { height:calc(8 * 42svh + 100svh); }
+/* Rayos: un lienzo 2D debajo del ∞ en la misma capa fija */
+.bucle canvas { position:absolute; inset:0; }
+/* Rendimiento: sin mezclas en capas que cubren toda la pantalla (el compositor las recalculaba en cada cuadro) */
+.estela,.ciudad-portada { mix-blend-mode:normal; }
+/* Celular: el panel de la etapa arranca debajo del ∞ (centrado colgaba desde la mitad de la fila y tapaba el espectro) */
+@media (max-width:860px) { .tray-pasos { align-self:start; } }
+@media (max-width:860px) { .trayectoria .tray-marco { grid-template-rows:auto minmax(110px,27svh) 1fr auto; } }
