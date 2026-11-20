@@ -72,7 +72,7 @@ function aplicarIdioma() {
     if (el.dataset.altEn) el.alt = t(alt, el.dataset.altEn);
   }
   const enlace = $('[data-idioma]'), sig = new URL(location.href);
-  sig.searchParams.set('lang', t('en', 'es')); enlace.href = sig; enlace.textContent = t('EN', 'ES'); enlace.lang = t('en', 'es');
+  sig.searchParams.set('lang', t('en', 'es')); enlace.href = sig; enlace.hreflang = t('en', 'es'); enlace.setAttribute('aria-checked', String(ingles));
   rotularSonido(botonSonido.dataset.estado || 'off'); document.dispatchEvent(new Event('idioma'));
 }
 $('[data-idioma]').addEventListener('click', e => {
@@ -81,6 +81,8 @@ $('[data-idioma]').addEventListener('click', e => {
   if (document.startViewTransition && !quieto()) document.startViewTransition(aplicarIdioma); else aplicarIdioma();
 });
 addEventListener('popstate', aplicarIdioma);
+// El interruptor también responde a la barra espaciadora, como cualquier switch
+$('[data-idioma]').addEventListener('keydown', e => { if (e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } });
 
 // ——— Entradas con respaldo: los títulos suben al verse; sin JS ya están visibles ———
 const titulos = $$('.titulo');
@@ -245,15 +247,25 @@ $$('[data-pase]').forEach(f => new IntersectionObserver(([e], io) => { if (e.isI
 
 // ——— Fondo por sección: el tono de la sección que cruza el centro pinta el body, la barra del navegador y el ASCII ———
 const TINTES = { '#0A0A0A': [143, 166, 255], '#060A1E': [143, 166, 255], '#0B0B12': [168, 176, 218], '#081133': [143, 166, 255], '#0D0A22': [190, 160, 255], '#06171B': [120, 220, 205], '#120C1C': [230, 165, 255], '#05121C': [120, 200, 255], '#2D5BFF': [255, 255, 255] };
-let tinte = TINTES['#0A0A0A'];
+// El tinte (ASCII y rastro del puntero) no salta: se acerca al de la sección con cada cuadro. En el Ciclo DevOps toma el
+// color de la etapa activa y el fondo de la página se tiñe apenas con ese color.
+let tinte = [...TINTES['#0A0A0A']], tinteMeta = tinte.slice();
+const acercarTinte = () => { let falta = 0; tinte = tinte.map((c, i) => { const d = tinteMeta[i] - c; falta += Math.abs(d); return Math.abs(d) < .5 ? tinteMeta[i] : c + d * .08; }); return falta > 1.5; };
+const deHex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
 (function tonos() {
-  const meta = $('meta[name="theme-color"]');
+  const meta = $('meta[name="theme-color"]'), ciclo = $('[data-trayectoria]');
+  let tono = '#0A0A0A', etapa = '#9B7BFF';
+  const pintar = () => {
+    const enCiclo = ciclo && tono === ciclo.dataset.tono;
+    raiz.style.setProperty('--fondo', enCiclo ? `color-mix(in oklab, ${etapa} 9%, ${tono})` : tono); meta.content = tono;
+    tinteMeta = enCiclo ? deHex(etapa) : (TINTES[tono] || tinteMeta); document.dispatchEvent(new Event('tono'));
+  };
   const io = new IntersectionObserver(es => es.forEach(e => {
     if (!e.isIntersecting) return;
-    const c = e.target.dataset.tono; raiz.style.setProperty('--fondo', c); meta.content = c;
-    raiz.toggleAttribute('data-claro', c === '#2D5BFF'); tinte = TINTES[c] || tinte; document.dispatchEvent(new Event('tono'));
+    tono = e.target.dataset.tono; raiz.toggleAttribute('data-claro', tono === '#2D5BFF'); pintar();
   }), { rootMargin: '-50% 0px -50% 0px' });
   $$('[data-tono]').forEach(s => io.observe(s));
+  document.addEventListener('etapa', e => { const li = $$('[data-paso]')[e.detail]; if (li) { etapa = li.style.getPropertyValue('--c').trim(); pintar(); } });
 })();
 
 // ——— Fondo ASCII: la ciudad en puntos del sitio anterior, en caracteres. Bajo el puntero se aclara y se vuelve más densa;
@@ -263,7 +275,7 @@ let tinte = TINTES['#0A0A0A'];
   const ctx = cv.getContext('2d');
   const RAMPA = ' .·:-=+*#%@', CUBETAS = 7;
   let cw, ch, cols, filas, lum = null, lw = 0, lh = 0, dpr = 1, t = 0, antes = 0, ultimo = 0, corriendo = false;
-  let px = -1e4, py = -1e4, ox = -1e4, oy = -1e4;
+  let px = -1e4, py = -1e4, ox = -1e4, oy = -1e4, ondas = [];
   const img = new Image(); img.src = 'ciudad-puntos.png';
   function muestrear() {
     // La grilla de luminancia es 1,6 veces más alta que la pantalla para poder derivar con el scroll.
@@ -290,16 +302,21 @@ let tinte = TINTES['#0A0A0A'];
     if (!lum) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, innerWidth, innerHeight);
     ctx.font = `500 ${ch * .78}px "IBM Plex Mono", ui-monospace, monospace`; ctx.textBaseline = 'top';
-    const deriva = Math.floor(scrollY / ch * .18) % (lh - filas), portada = 1 + .9 * Math.max(0, 1 - scrollY / innerHeight);
+    // En la portada manda la ciudad en puntos del sitio anterior: el ASCII queda tenue y toma fuerza al bajar.
+    const deriva = Math.floor(scrollY / ch * .18) % (lh - filas), portada = .3 + .7 * Math.min(1, scrollY / innerHeight);
     const R = 170, filasTxt = Array.from({ length: CUBETAS }, () => new Array(filas));
+    const ya = performance.now(); ondas = ondas.filter(o => ya - o.t < 1500);
     for (let y = 0; y < filas; y++) {
       const lineas = Array.from({ length: CUBETAS }, () => []);
       for (let x = 0; x < cols; x++) {
         const base = lum[(y + deriva) * lw + x] || 0;
         const onda = .5 + .5 * Math.sin(x * .16 + y * .1 - t * 1.1);
         const dx = x * cw - px, dy = y * ch - py, cerca = Math.max(0, 1 - Math.hypot(dx, dy) / R) ** 2;
-        const v = Math.min(1, base * (.7 + onda * .45) + cerca * .75);
-        const a = Math.min(.95, (.05 + base * .2 + onda * base * .08) * portada + cerca * .7);
+        // Anillo que sale del clic y se apaga mientras se abre
+        let anillo = 0;
+        for (const o of ondas) { const e = ya - o.t, d = Math.hypot(x * cw - o.x, y * ch - o.y); anillo += Math.max(0, 1 - Math.abs(d - e * .75) / 42) * (1 - e / 1500); }
+        const v = Math.min(1, base * (.7 + onda * .45) + cerca * .75 + anillo * .9);
+        const a = Math.min(.95, (.05 + base * .2 + onda * base * .08 + cerca * .7) * portada + anillo * .7);
         const k = Math.min(CUBETAS - 1, Math.floor(a * CUBETAS));
         const c = v < .06 ? ' ' : RAMPA[Math.min(RAMPA.length - 1, Math.floor(v * RAMPA.length))];
         for (let j = 0; j < CUBETAS; j++) lineas[j].push(j === k ? c : ' ');
@@ -318,11 +335,17 @@ let tinte = TINTES['#0A0A0A'];
     const dt = Math.min(.1, (ahora - antes) / 1000); antes = ahora;
     ox += (px - ox) * .2; oy += (py - oy) * .2;
     if (!quieto()) t += dt;
-    if (ahora - ultimo >= 50) { const tx = px, ty = py; px = ox; py = oy; dibujar(); px = tx; py = ty; ultimo = ahora; }
-    if (quieto() && Math.abs(px - ox) + Math.abs(py - oy) < 1) { corriendo = false; return; }
+    const cambiaColor = acercarTinte();
+    if (ahora - ultimo >= (ondas.length ? 33 : 50)) { const tx = px, ty = py; px = ox; py = oy; dibujar(); px = tx; py = ty; ultimo = ahora; }
+    if (quieto() && !cambiaColor && Math.abs(px - ox) + Math.abs(py - oy) < 1) { corriendo = false; return; }
     requestAnimationFrame(tic);
   };
   function pedir() { if (!corriendo) { corriendo = true; antes = performance.now(); requestAnimationFrame(tic); } }
+  // Un clic en un lugar vacío manda una onda que recorre la ciudad en caracteres
+  addEventListener('pointerdown', e => {
+    if (quieto() || e.button !== 0 || e.target.closest('a,button,input,label,select,textarea,[role="button"],iframe,.celular') || raiz.hasAttribute('data-sobre-bucle')) return;
+    ondas.push({ x: e.clientX, y: e.clientY, t: performance.now() }); if (ondas.length > 3) ondas.shift(); pedir();
+  });
   addEventListener('pointermove', e => { px = e.clientX; py = e.clientY; if (ox < -1e3) { ox = px; oy = py; } pedir(); }, { passive: true });
   document.documentElement.addEventListener('pointerleave', () => { px = py = -1e4; pedir(); });
   addEventListener('scroll', pedir, { passive: true });
@@ -344,52 +367,65 @@ function iconizar() {
 }
 document.addEventListener('idioma', iconizar);
 
-// ——— Trayectoria: sección fija; el progreso del scroll elige el paso, gira las fichas del año y mueve el marcador ———
-(function trayectoria() {
+// ——— Ciclo DevOps fijo: la sección queda quieta y el scroll elige la etapa. El ∞ está entero desde el comienzo y cada etapa
+// sale como un rayo de su color (un espectro dividido en ocho). Al lado, las herramientas de esa etapa y lo que hice en ella.
+// El espectro de abajo lleva a cada etapa; cada herramienta resalta dónde la usé. ———
+(function cicloFijo() {
   const sec = $('[data-trayectoria]'); if (!sec) return;
-  const pasos = $$('[data-paso]', sec), fichas = $$('.ficha', sec), riel = $('.tray-riel', sec);
+  const pasos = $$('[data-paso]', sec), botones = $$('[data-ir]', sec), lienzo = $('.tray-lienzo', sec);
+  const tonos = [1, 1.122, 1.26, 1.498, 1.682, 2, 2.245, 2.52];
   let actual = -1, pedido = false;
-  const anio = texto => fichas.forEach((f, i) => {
-    const c = texto[i]; if (f.textContent === c) return;
-    if (quieto()) { f.textContent = c; return; }
-    f.removeAttribute('data-gira'); void f.offsetWidth; f.toggleAttribute('data-gira', true); setTimeout(() => { f.textContent = c; }, 210);
-  });
-  const medir = () => {
-    pedido = false;
-    const r = sec.getBoundingClientRect(), recorrido = Math.max(1, r.height - innerHeight);
-    const p = Math.min(1, Math.max(0, -r.top / recorrido));
-    riel.style.setProperty('--p', p.toFixed(4)); sec.style.setProperty('--p', p.toFixed(4));
-    const i = Math.min(pasos.length - 1, Math.floor(p * pasos.length));
+  const recorrido = () => Math.max(1, sec.offsetHeight - innerHeight);
+  const elegir = i => {
     if (i === actual) return;
     pasos.forEach((li, k) => { li.toggleAttribute('data-actual', k === i); li.toggleAttribute('data-pasado', k < i); });
-    anio(pasos[i].dataset.anio);
-    if (actual !== -1) tic(1.2 + i * .18);
-    actual = i;
+    botones.forEach((b, k) => { b.setAttribute('aria-pressed', String(k === i)); b.toggleAttribute('data-pasada', k < i); });
+    sec.style.setProperty('--c-act', pasos[i].style.getPropertyValue('--c'));
+    if (actual !== -1) {
+      sonar('click', { tono: tonos[i], vol: .3 });
+      if (!quieto()) { lienzo.removeAttribute('data-dispara'); void lienzo.offsetWidth; lienzo.toggleAttribute('data-dispara', true); }
+    }
+    actual = i; document.dispatchEvent(new CustomEvent('etapa', { detail: i }));
+  };
+  const medir = () => {
+    pedido = false;
+    const p = Math.min(1, Math.max(0, -sec.getBoundingClientRect().top / recorrido()));
+    elegir(Math.min(pasos.length - 1, Math.floor(p * pasos.length)));
   };
   addEventListener('scroll', () => { if (!pedido) { pedido = true; requestAnimationFrame(medir); } }, { passive: true });
   addEventListener('resize', medir); medir();
-})();
-
-// ——— Ciclo DevOps: ocho etapas; cada una con su tono (escala pentatónica) y su panel ———
-(function ciclo() {
-  const botones = $$('[data-etapa]'); if (!botones.length) return;
-  const tonos = [1, 1.122, 1.26, 1.498, 1.682, 2, 2.245, 2.52];
-  let actual = botones[0].dataset.etapa;
-  window.cvEtapa = (k, conSonido = true) => {
-    if (k === actual) return; actual = k;
-    let indice = 0;
-    botones.forEach((b, i) => { const si = b.dataset.etapa === k; b.setAttribute('aria-pressed', String(si)); if (si) { indice = i; if (conSonido) sonar('click', { tono: tonos[i], vol: .3 }); } });
-    $$('[data-etapa-datos]').forEach(li => {
-      const si = li.dataset.etapaDatos === k; li.toggleAttribute('data-oculta', !si);
-      if (si && !quieto()) { li.removeAttribute('data-entra'); void li.offsetWidth; li.toggleAttribute('data-entra', true); }
+  botones.forEach((b, i) => b.addEventListener('click', () => {
+    const y = sec.getBoundingClientRect().top + scrollY + recorrido() * (i + .5) / pasos.length;
+    scrollTo({ top: y, behavior: quieto() ? 'auto' : 'smooth' }); elegir(i);
+  }));
+  $('.espectro', sec).addEventListener('keydown', e => {
+    const i = botones.indexOf(document.activeElement), d = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+    if (i < 0 || !d) return; e.preventDefault(); botones[(i + d + botones.length) % botones.length].focus();
+  });
+  // Herramientas: al pasar, enfocar o tocar una, se iluminan las frases donde aparece y se apagan las demás; un toque la fija.
+  pasos.forEach(li => {
+    const dds = $$('dd', li), chips = $$('.herramientas li', li);
+    let fija = null;
+    const mostrar = h => {
+      const nombres = h ? h.textContent.split('·').map(x => x.trim().toLowerCase()).filter(Boolean) : [];
+      const usa = dd => nombres.some(n => dd.textContent.toLowerCase().includes(n));
+      const alguno = !!h && dds.some(usa);
+      dds.forEach(dd => { dd.toggleAttribute('data-menciona', alguno && usa(dd)); dd.toggleAttribute('data-atenua', alguno && !usa(dd)); });
+      chips.forEach(c => c.toggleAttribute('data-elegida', c === h));
+    };
+    chips.forEach(h => {
+      h.tabIndex = 0; h.setAttribute('role', 'button'); h.setAttribute('aria-pressed', 'false');
+      h.addEventListener('pointerenter', () => { if (!fija) mostrar(h); });
+      h.addEventListener('focus', () => { if (!fija) mostrar(h); });
+      h.addEventListener('pointerleave', () => { if (!fija) mostrar(null); });
+      h.addEventListener('blur', () => { if (!fija) mostrar(null); });
+      const tocar = () => {
+        fija = fija === h ? null : h; chips.forEach(c => c.setAttribute('aria-pressed', String(c === fija)));
+        mostrar(fija || h); sonar('click', { tono: 1.5, vol: .2 });
+      };
+      h.addEventListener('click', tocar);
+      h.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tocar(); } });
     });
-    document.dispatchEvent(new CustomEvent('etapa', { detail: indice }));
-  };
-  botones.forEach(b => ['pointerenter', 'focus', 'click'].forEach(ev => b.addEventListener(ev, () => cvEtapa(b.dataset.etapa))));
-  $('.etapas').addEventListener('keydown', e => {
-    const i = botones.indexOf(document.activeElement); if (i < 0) return;
-    const d = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key]; if (!d) return;
-    e.preventDefault(); botones[(i + d + botones.length) % botones.length].focus();
   });
 })();
 
@@ -465,6 +501,107 @@ document.addEventListener('idioma', iconizar);
   }));
 })();
 
+// ——— Portada: la ciudad en puntos del sitio anterior, con sus mismos efectos. Donde mira el puntero los puntos se enfocan;
+// luces con estela recorren las calles (horizontal, vertical y diagonales) y una constelación une los puntos cercanos y al puntero.
+// Se frenan fuera de pantalla, con la pestaña oculta y con movimiento reducido. ———
+(function ciudadPortada() {
+  const hero = $('.poster'), fig = $('.ciudad-portada'); if (!fig) return;
+  const fina = $('.fina', fig), luz = $('[data-trafico]', fig).getContext('2d'), con = $('[data-constelacion]', fig).getContext('2d');
+  let x = 50, y = 42, tx = 50, ty = 42, mov = false, px = -999, py = -999;
+  const seguir = () => {
+    x += (tx - x) * .12; y += (ty - y) * .12;
+    fina.style.setProperty('--mx', x + '%'); fina.style.setProperty('--my', y + '%');
+    if (Math.abs(tx - x) + Math.abs(ty - y) > .05) requestAnimationFrame(seguir); else mov = false;
+  };
+  hero.addEventListener('pointermove', e => {
+    const r = hero.getBoundingClientRect(); px = e.clientX - r.left; py = e.clientY - r.top;
+    if (quieto() || e.pointerType !== 'mouse') return;
+    tx = px / r.width * 100; ty = py / r.height * 100;
+    if (!hero.hasAttribute('data-foco')) hero.toggleAttribute('data-foco', true);
+    if (!mov) { mov = true; requestAnimationFrame(seguir); }
+  });
+  hero.addEventListener('pointerleave', () => { hero.removeAttribute('data-foco'); px = py = -999; });
+  let W = 0, H = 0;
+  const medir = () => {
+    const d = Math.min(devicePixelRatio || 1, 2); W = fig.clientWidth; H = fig.clientHeight;
+    for (const c of [luz, con]) { c.canvas.width = W * d; c.canvas.height = H * d; c.setTransform(d, 0, 0, d, 0, 0); }
+  };
+  medir(); new ResizeObserver(medir).observe(fig);
+  const dirs = [[1, 0], [0, 1], [.7071, .7071], [.7071, -.7071]];
+  const nueva = () => { const [dx, dy] = dirs[Math.random() * 4 | 0], s = (Math.random() < .5 ? -1 : 1) * (.5 + Math.random() * 1.3); return { x: Math.random() * W, y: Math.random() * H, dx: dx * s, dy: dy * s, vida: 240 + Math.random() * 360, edad: 0 }; };
+  const chico = innerWidth < 700, luces = Array.from({ length: chico ? 22 : 48 }, nueva);
+  const pts = Array.from({ length: chico ? 40 : 80 }, () => ({ x: Math.random() * W, y: Math.random() * H, vx: (Math.random() - .5) * .35, vy: (Math.random() - .5) * .35 }));
+  let activo = false, enVista = true;
+  const cuadro = () => {
+    if (!activo) return;
+    luz.clearRect(0, 0, W, H); luz.lineCap = 'round'; luz.lineWidth = 1.6;
+    for (const l of luces) {
+      l.x += l.dx; l.y += l.dy; l.edad++;
+      luz.strokeStyle = `rgba(232,226,214,${Math.sin(Math.PI * Math.min(1, l.edad / l.vida)) * .75})`;
+      luz.beginPath(); luz.moveTo(l.x - l.dx * 14, l.y - l.dy * 14); luz.lineTo(l.x, l.y); luz.stroke();
+      if (l.edad > l.vida || l.x < -40 || l.x > W + 40 || l.y < -40 || l.y > H + 40) Object.assign(l, nueva());
+    }
+    // ponytail: O(n²) entre 80 puntos (3.200 pares por cuadro); si suben de 200, agrupar en una grilla espacial.
+    con.clearRect(0, 0, W, H); con.lineWidth = 1;
+    for (const p of pts) { p.x += p.vx; p.y += p.vy; if (p.x < 0 || p.x > W) p.vx *= -1; if (p.y < 0 || p.y > H) p.vy *= -1; }
+    for (let i = 0; i < pts.length; i++) {
+      const a = pts[i];
+      for (let j = i + 1; j < pts.length; j++) { const b = pts[j], d = Math.hypot(a.x - b.x, a.y - b.y); if (d < 120) { con.strokeStyle = `rgba(232,226,214,${(1 - d / 120) * .35})`; con.beginPath(); con.moveTo(a.x, a.y); con.lineTo(b.x, b.y); con.stroke(); } }
+      const dp = Math.hypot(a.x - px, a.y - py); if (dp < 170) { con.strokeStyle = `rgba(244,244,242,${(1 - dp / 170) * .6})`; con.beginPath(); con.moveTo(a.x, a.y); con.lineTo(px, py); con.stroke(); }
+      con.fillStyle = 'rgba(244,244,242,.7)'; con.fillRect(a.x - 1, a.y - 1, 2, 2);
+    }
+    requestAnimationFrame(cuadro);
+  };
+  const prender = () => {
+    const antes = activo; activo = !document.hidden && enVista && !quieto();
+    if (activo && !antes) requestAnimationFrame(cuadro);
+    if (!activo) { luz.clearRect(0, 0, W, H); con.clearRect(0, 0, W, H); }
+  };
+  new IntersectionObserver(([e]) => { enVista = e.isIntersecting; prender(); }).observe(hero);
+  document.addEventListener('visibilitychange', prender); document.addEventListener('movimiento', prender); prender();
+})();
+
+// ——— Rastro del puntero (E370) y etiqueta de modo (E374). Sólo con mouse y con movimiento: una cinta que se afina hacia atrás,
+// del color del tono de la sección; se alarga y brilla con la velocidad y desaparece al quedarse quieto. El cursor del sistema
+// no se esconde nunca. Sobre el ∞ de la portada, la etiqueta avisa que se puede girar arrastrando. ———
+if (matchMedia('(hover:hover) and (pointer:fine)').matches) (function estela() {
+  const cv = document.createElement('canvas'), etq = document.createElement('span');
+  cv.className = 'estela'; etq.className = 'estela-etiqueta'; cv.setAttribute('aria-hidden', 'true'); etq.setAttribute('aria-hidden', 'true');
+  document.body.append(cv, etq);
+  const ctx = cv.getContext('2d'), VIDA = 280;
+  let dpr = 1, hx = -1e4, hy = -1e4, tx = -1e4, ty = -1e4, dentro = false, corriendo = false, rastro = [];
+  const medir = () => { dpr = Math.min(devicePixelRatio || 1, 2); cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; };
+  medir(); addEventListener('resize', medir);
+  addEventListener('pointermove', e => {
+    if (e.pointerType !== 'mouse') return;
+    tx = e.clientX; ty = e.clientY; if (!dentro) { hx = tx; hy = ty; dentro = true; }
+    pedir();
+  }, { passive: true });
+  raiz.addEventListener('pointerleave', () => { dentro = false; pedir(); });
+  function tic(ahora) {
+    if (dentro && !quieto()) { hx += (tx - hx) * .42; hy += (ty - hy) * .42; rastro.push({ x: hx, y: hy, t: ahora }); }
+    while (rastro.length && ahora - rastro[0].t > VIDA) rastro.shift();
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, innerWidth, innerHeight); ctx.lineCap = 'round';
+    const [r, g, b] = tinte;
+    for (let i = 1; i < rastro.length; i++) {
+      const p = rastro[i - 1], q = rastro[i], k = 1 - (ahora - q.t) / VIDA, rapidez = Math.min(1, Math.hypot(q.x - p.x, q.y - p.y) / 28);
+      if (rapidez < .02) continue;
+      ctx.strokeStyle = `rgba(${r},${g},${b},${(k * k * (.35 + .6 * rapidez)).toFixed(3)})`;
+      ctx.lineWidth = .6 + k * (1.6 + 4.4 * rapidez);
+      ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke();
+    }
+    // Etiqueta de modo: sólo donde el gesto cambia de sentido (mirar → girar el ∞)
+    const girando = raiz.hasAttribute('data-arrastre'), sobre = raiz.hasAttribute('data-sobre-bucle');
+    etq.toggleAttribute('data-visible', dentro && (girando || sobre));
+    if (dentro && (girando || sobre)) {
+      etq.textContent = girando ? t('Girando', 'Rotating') : t('Arrastrá para girar', 'Drag to rotate');
+      etq.style.transform = `translate(${tx + 18}px,${ty + 20}px)`;
+    }
+    if (rastro.length || (dentro && (girando || sobre))) requestAnimationFrame(tic); else corriendo = false;
+  }
+  function pedir() { if (!corriendo) { corriendo = true; requestAnimationFrame(tic); } }
+})();
+
 // ——— Imán suave en las pastillas (solo con mouse): se corren hacia el puntero y vuelven con resorte ———
 if (matchMedia('(hover:hover) and (pointer:fine)').matches) {
   $$('.pildora').forEach(p => {
@@ -472,5 +609,42 @@ if (matchMedia('(hover:hover) and (pointer:fine)').matches) {
     p.addEventListener('pointerleave', () => { p.style.setProperty('--mx', '0px'); p.style.setProperty('--my', '0px'); });
   });
 }
+
+// ——— Retoques del 20/11 (tabla de retoques de design-unslopify): luz que sigue al puntero en las tarjetas, inclinación con
+// resorte, onda desde el toque en los controles y el tinte de la sección como variable CSS (barra de lectura, selección, luces). ———
+(function retoques() {
+  if (matchMedia('(hover:hover) and (pointer:fine)').matches) $$('.pase, .entrada, .acto').forEach(el => {
+    const inclina = el.classList.contains('pase'); // .entrada ya anima su transform con el scroll
+    el.addEventListener('pointermove', e => {
+      const r = el.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+      el.style.setProperty('--lx', (x * 100).toFixed(1) + '%'); el.style.setProperty('--ly', (y * 100).toFixed(1) + '%');
+      if (inclina && !quieto()) { el.style.setProperty('--ix', ((.5 - y) * 6).toFixed(2) + 'deg'); el.style.setProperty('--iy', ((x - .5) * 8).toFixed(2) + 'deg'); }
+    });
+    el.addEventListener('pointerleave', () => { for (const [k, v] of [['--ix', '0deg'], ['--iy', '0deg'], ['--lx', '-50%'], ['--ly', '-50%']]) el.style.setProperty(k, v); });
+  });
+  document.addEventListener('pointerdown', e => {
+    const b = e.target.closest('.pildora, .espectro-etapa, .pdf-boton'); if (!b || quieto()) return;
+    const r = b.getBoundingClientRect(), o = document.createElement('i'); o.className = 'onda-toque'; o.setAttribute('aria-hidden', 'true');
+    o.style.left = (e.clientX - r.left) + 'px'; o.style.top = (e.clientY - r.top) + 'px'; b.append(o);
+    o.addEventListener('animationend', () => o.remove());
+  });
+  const ponerTinte = () => raiz.style.setProperty('--tinte', `rgb(${tinteMeta.map(Math.round).join(' ')})`);
+  document.addEventListener('tono', ponerTinte); ponerTinte();
+})();
+
+// ——— PDF flotante: aparece después de la portada (en el celular desde el comienzo), se esconde en el ciclo fijo y en el contacto (ya tiene el suyo) y su anillo marca cuánto se leyó ———
+(function pdfFlotante() {
+  const caja = $('[data-pdf-flotante]'); if (!caja) return;
+  const contacto = $('#contacto'); let pedido = false;
+  const medir = () => {
+    pedido = false;
+    const total = Math.max(1, document.documentElement.scrollHeight - innerHeight), c = contacto?.getBoundingClientRect();
+    const ciclo = $('[data-trayectoria]')?.getBoundingClientRect(), fijo = ciclo && ciclo.top <= 1 && ciclo.bottom >= innerHeight - 1;
+    caja.toggleAttribute('data-visible', (innerWidth < 600 || scrollY > innerHeight * .75) && !fijo && !(c && c.top < innerHeight * .8));
+    caja.style.setProperty('--leido', (scrollY / total).toFixed(3));
+  };
+  addEventListener('scroll', () => { if (!pedido) { pedido = true; requestAnimationFrame(medir); } }, { passive: true });
+  addEventListener('resize', medir); medir();
+})();
 
 aplicarIdioma();
