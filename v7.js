@@ -690,6 +690,12 @@ if (matchMedia('(hover:hover) and (pointer:fine)').matches) {
   document.addEventListener('idioma', armar); // después de iconizar, así el detalle trae los íconos
 })();
 
+// ——— Celular: los esquemas que se deslizan de costado arrancan centrados (la arquitectura tiene la API en el medio) ———
+(function centrarEsquemas() {
+  const centrar = () => { if (innerWidth > 700) return; $$('.arq, [data-secuencia]').forEach(c => { c.scrollLeft = (c.scrollWidth - c.clientWidth) / 2; }); };
+  centrar(); addEventListener('resize', centrar);
+})();
+
 // ——— PDF flotante: aparece después de la portada (en el celular desde el comienzo), se esconde en el ciclo fijo y en el contacto (ya tiene el suyo) y su anillo marca cuánto se leyó ———
 (function pdfFlotante() {
   const caja = $('[data-pdf-flotante]'); if (!caja) return;

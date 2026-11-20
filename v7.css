@@ -816,3 +816,39 @@ html:not([data-vivo]) .acto-etapas { display:none; }
 /* Celular: el panel de la etapa arranca debajo del ∞ (centrado colgaba desde la mitad de la fila y tapaba el espectro) */
 @media (max-width:860px) { .tray-pasos { align-self:start; } }
 @media (max-width:860px) { .trayectoria .tray-marco { grid-template-rows:auto minmax(110px,27svh) 1fr auto; } }
+
+/* ═══════════ Responsive (20/11 noche): celular y tablet pensados como tales ═══════════ */
+@media (max-width:860px) {
+  /* Portada: el ∞ va en su propio lugar, debajo del nombre (antes la regla absoluta de más arriba lo ponía encima) */
+  .poster { grid-template-rows:auto auto auto auto auto; }
+  .lugar-bucle { position:relative; inset:auto; height:min(58vw,330px); }
+  /* El PDF va en el dock: el flotante tapaba texto */
+  .pdf-flotante { display:none!important; }
+  .dock a.dock-pdf { gap:6px; grid-auto-flow:column; color:#fff; }
+  .dock a.dock-pdf svg { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
+}
+/* Esquemas isométricos: en pantallas angostas se deslizan de costado a un tamaño legible (si no, las etiquetas quedaban en 6–7 px) */
+@media (max-width:700px) {
+  .arq,[data-secuencia],.acto figure { overflow-x:auto; overscroll-behavior-x:contain; scrollbar-width:thin; scrollbar-color:var(--linea) transparent;
+    -webkit-mask-image:linear-gradient(90deg,transparent,#000 14px,#000 calc(100% - 14px),transparent); mask-image:linear-gradient(90deg,transparent,#000 14px,#000 calc(100% - 14px),transparent); }
+  .arq > .iso,[data-secuencia] > .iso,.acto figure > .iso { min-width:620px; }
+  .acto figure figcaption { position:sticky; left:0; max-width:calc(100vw - 2 * var(--g)); }
+}
+/* Toque: todo control mide al menos 44 px */
+@media (pointer:coarse) {
+  .pildora.compacta,.boton.pildora.compacta { min-height:44px; }
+  .pildora.solo-icono { width:44px; }
+  .idioma-switch [data-op] { height:36px; }
+  .espectro-etapa,.acto-etapa { min-height:44px; }
+}
+/* Correo del contacto en blanco liso: el cromo dejaba una banda oscura que parecía tachado */
+.contacto .correo.cromo { background:none; -webkit-background-clip:border-box; background-clip:border-box; color:#fff; -webkit-text-fill-color:#fff; }
+/* Tablet y celular: la barra entra en una línea (el PDF está en el dock; el sonido queda en ícono, con su texto para lectores) */
+@media (max-width:860px) {
+  .controles .pdf { display:none; }
+  .controles .sonido [data-sonido-texto] { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+  .controles .sonido.pildora { width:44px; padding:0; justify-content:center; }
+}
+@media (pointer:coarse) { .pildora { min-height:44px; } }
+/* iOS: si igual detecta una fecha o un número, que no lo pinte como enlace */
+a[x-apple-data-detectors] { color:inherit!important; text-decoration:none!important; font:inherit!important; }
