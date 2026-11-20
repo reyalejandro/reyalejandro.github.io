@@ -295,6 +295,10 @@ html[data-movimiento="off"] :is(.progreso,.escritorio,.entrada,.acto + .acto::be
 
 /* ═══════════ v7 «Cromo vivo» · especificación en reports/2026-11-20-v7-design.md ═══════════ */
 
+/* ——— Sin la barra de scroll nativa (pedido del dueño): el scroll sigue igual y la barra de lectura de arriba (E021) marca el avance ——— */
+html { scrollbar-width:none; }
+html::-webkit-scrollbar { display:none; }
+
 /* ——— Fondo por sección: cada sección declara data-tono y el fondo pasa de uno a otro ——— */
 :root { --fondo:#0A0A0A; }
 body { background:var(--fondo); transition:background-color 1.1s ease; }
