@@ -44,41 +44,105 @@ try {
     grupo.add(m); return m;
   });
 
-  // ——— Rayos: cuando una etapa se activa, salen rayos de su color desde su tramo hacia afuera y cubren la zona; después
-  // quedan chisporroteando mientras la etapa sigue activa. Se dibujan en 2D, debajo del ∞, a 30 cuadros como mucho. ———
-  const TRAMOS_RAYO = innerWidth < 760 ? 16 : 30, SEG = 10;
-  const nuevoRayo = () => ({ u: Math.random(), ang: (Math.random() - .5) * 3.2, largo: .5 + Math.random() * 1.1, haz: Math.random() < .3,
-    off: Array.from({ length: SEG + 1 }, (_, k) => k ? (Math.random() - .5) * .18 : 0), brillo: .7 + Math.random() * .3 });
-  let rayos = Array.from({ length: TRAMOS_RAYO }, nuevoRayo), rayosDibujo = 0, rayosLimpio = true, forzar = true;
+  // ——— Rayos con contenido: cuando una etapa se activa, de su tramo salen haces de su color que terminan en sus herramientas
+  // (con ícono) y en sus metodologías y prácticas. Las etiquetas se acomodan alrededor del ∞ sin pisarse ni invadir el panel;
+  // al pasar el mouse marcan la frase donde se usaron y un toque la fija. En el celular no hay lugar: siguen en el panel. ———
+  let forzar = true, rayosLimpio = true, rayosDibujo = 0, tCambio = 0;
   const pantalla = (p, salida) => { p.applyMatrix4(grupo.matrixWorld).project(camera); salida.x = (p.x + 1) / 2 * innerWidth; salida.y = (1 - p.y) / 2 * innerHeight; return salida; };
-  const pRayo = new THREE.Vector3(), o2 = { x: 0, y: 0 }, c2 = { x: 0, y: 0 };
-  function dibujarRayos(ahora) {
-    const fuerza = cur.park * cur.o;
-    if (fuerza < .05) { if (!rayosLimpio) { rctx.clearRect(0, 0, lienzoRayos.width, lienzoRayos.height); rayosLimpio = true; } return; }
-    if (ahora - rayosDibujo < (rayo < 1 ? 33 : 50)) return; rayosDibujo = ahora; rayosLimpio = false; // 30 cuadros en la salida, 20 al chisporrotear
-    const vivo = !quieto(), crece = suave(Math.min(1, rayo * 1.6)), u = unidad(), escala = ANCHO * cur.s / u;
-    if (vivo && rayo >= 1) rayos.forEach((r, i) => { if (Math.random() < .06) rayos[i] = nuevoRayo(); });
-    const dpr = lienzoRayos.width / innerWidth;
-    rctx.setTransform(dpr, 0, 0, dpr, 0, 0); rctx.clearRect(0, 0, innerWidth, innerHeight);
-    rctx.globalCompositeOperation = 'lighter'; rctx.lineCap = 'round'; rctx.lineJoin = 'round';
-    const col = ESPECTRO[activa], rgb = `${col >> 16 & 255},${col >> 8 & 255},${col & 255}`;
-    pantalla(pRayo.set(0, 0, 0), c2);
-    for (const r of rayos) {
-      pantalla(tramoCurva(activa).getPoint(r.u, pRayo), o2);
-      let dx = o2.x - c2.x, dy = o2.y - c2.y; const n = Math.hypot(dx, dy) || 1; dx /= n; dy /= n;
-      const ca = Math.cos(r.ang), sa = Math.sin(r.ang), ux = dx * ca - dy * sa, uy = dx * sa + dy * ca;
-      const L = r.largo * escala * .55 * crece, a = fuerza * r.brillo * (rayo < 1 ? 1 : vivo ? .55 + .45 * Math.random() : .8);
-      for (const [ancho, alfa] of [[9, .12], [3, .3], [1.6, 1]]) {
-        rctx.lineWidth = ancho;
-        for (let k = 0; k < SEG; k++) {
-          const t0 = k / SEG, t1 = (k + 1) / SEG, d0 = r.haz ? 0 : r.off[k] * L, d1 = r.haz ? 0 : r.off[k + 1] * L;
-          rctx.strokeStyle = `rgba(${rgb},${(a * alfa * (1 - t0) ** 1.1).toFixed(3)})`;
-          rctx.beginPath();
-          rctx.moveTo(o2.x + ux * L * t0 - uy * d0, o2.y + uy * L * t0 + ux * d0);
-          rctx.lineTo(o2.x + ux * L * t1 - uy * d1, o2.y + uy * L * t1 + ux * d1);
-          rctx.stroke();
-        }
+  const pRayo = new THREE.Vector3(), c2 = { x: 0, y: 0 };
+  const capaEtq = document.createElement('div'); capaEtq.className = 'rayos-etq'; capaEtq.setAttribute('aria-hidden', 'true'); document.body.append(capaEtq);
+  const pasosLi = [...document.querySelectorAll('[data-paso]')];
+  let etiquetas = []; // { el, w, h, x, y, ax, ay, k }
+  const enDesktop = () => innerWidth > 860;
+  function armarEtiquetas() {
+    const li = pasosLi[activa]; capaEtq.innerHTML = ''; etiquetas = [];
+    if (!li) return;
+    const en = document.documentElement.lang === 'en', color = '#' + ESPECTRO[activa].toString(16).padStart(6, '0');
+    capaEtq.style.setProperty('--c', color);
+    const herramientas = [...li.querySelectorAll('.herramientas li')].map(c => ({ html: c.innerHTML, texto: c.textContent.trim(), tipo: 'herr', chip: c }));
+    const metodos = (li.dataset.metodos || '').split('|').filter(Boolean).map(m => { const [es, enTxt] = m.split('::'); const tx = en ? enTxt : es; return { html: tx, texto: tx, tipo: 'metodo' }; });
+    // Se intercalan para que herramientas y prácticas se repartan por todo el abanico
+    const todas = []; for (let i = 0; i < Math.max(herramientas.length, metodos.length); i++) { if (herramientas[i]) todas.push(herramientas[i]); if (metodos[i]) todas.push(metodos[i]); }
+    todas.forEach((d, k) => {
+      const el = document.createElement('span'); el.className = 'etq ' + d.tipo; el.innerHTML = d.html; capaEtq.append(el);
+      const resaltar = si => window.cvResaltar?.(si ? d.texto : null, d.chip);
+      el.addEventListener('pointerenter', () => resaltar(true)); el.addEventListener('pointerleave', () => resaltar(false));
+      el.addEventListener('click', () => { if (d.chip) d.chip.click(); else window.cvResaltar?.(d.texto, null, true); });
+      etiquetas.push({ el, w: 0, h: 0, x: 0, y: 0, ax: 0, ay: 0, k, n: todas.length });
+    });
+    etiquetas.forEach(e => { e.w = e.el.offsetWidth; e.h = e.el.offsetHeight; });
+    tCambio = performance.now(); rayosDibujo = 0;
+  }
+  document.addEventListener('idioma', armarEtiquetas);
+  function ubicarEtiquetas(ahora) {
+    const fuerza = cur.park * cur.o, mostrar = enDesktop() && fuerza > .3;
+    capaEtq.style.opacity = mostrar ? Math.min(1, (fuerza - .3) / .4).toFixed(2) : '0';
+    capaEtq.toggleAttribute('data-visible', mostrar);
+    if (!mostrar || !etiquetas.length) return false;
+    // Zona libre: entre el texto de la etapa (arriba) y el espectro (abajo), a todo el ancho
+    const panel = document.querySelector('.tray-pasos')?.getBoundingClientRect(), espectro = document.querySelector('.espectro')?.getBoundingClientRect();
+    const minX = 16, maxX = innerWidth - 16, minY = (panel ? panel.bottom : 0) + 6, maxY = (espectro ? espectro.top : innerHeight) - 10;
+    const tramo = tramoCurva(activa), vivo = !quieto();
+    // Con el zoom, el tramo activo ocupa el centro de la zona: las etiquetas lo rodean en un óvalo ancho (la zona es baja y
+    // ancha), repartidas parejo y escalonadas. Cada haz sale del punto del tramo más cercano a su etiqueta.
+    const muestras = []; for (let m = 0; m <= 12; m++) { const q = { x: 0, y: 0 }; pantalla(tramo.getPoint(m / 12, pRayo), q); muestras.push(q); }
+    const xs = muestras.map(q => q.x), ys = muestras.map(q => q.y);
+    c2.x = (Math.min(...xs) + Math.max(...xs)) / 2; c2.y = (Math.min(...ys) + Math.max(...ys)) / 2;
+    const n = etiquetas.length, alto = Math.max(60, maxY - minY);
+    const rx = Math.max((Math.max(...xs) - Math.min(...xs)) / 2 + 110, 300), ry = Math.min((Math.max(...ys) - Math.min(...ys)) / 2 + 46, alto / 2 - 18);
+    // Si a los costados del ∞ entero hay lugar, las etiquetas van en dos columnas (mitad a cada lado) y no pisan el tubo;
+    // si no (pantallas de 861 a ~1150 px), rodean el tramo en el óvalo.
+    const todo = []; for (let m = 0; m < 32; m++) { const q = { x: 0, y: 0 }; pantalla(curva.getPoint(m / 32, pRayo), q); todo.push(q); }
+    const margen = 30 + .42 * cur.s / unidad(); // aire más el grosor del tubo
+    const bIzq = Math.min(...todo.map(q => q.x)) - margen, bDer = Math.max(...todo.map(q => q.x)) + margen;
+    const anchoMax = Math.max(...etiquetas.map(e => e.w)) + 34, columnas = bIzq - minX >= anchoMax && maxX - bDer >= anchoMax;
+    const lado = [[], []]; etiquetas.forEach((e, k) => lado[k % 2].push(e));
+    etiquetas.forEach((e, k) => {
+      const extra = (k % 2) * 40; // escalonadas, para que las vecinas no queden en fila
+      if (columnas) {
+        const grupoLado = lado[k % 2], i = grupoLado.indexOf(e), m = grupoLado.length, corrimiento = (i % 2) * 30;
+        e.y = minY + (i + .5) / m * alto - e.h / 2;
+        e.x = k % 2 ? bDer + corrimiento : bIzq - corrimiento - e.w;
+      } else {
+        const th = -Math.PI / 2 + (k + .5) / n * Math.PI * 2, cx = Math.cos(th), cy = Math.sin(th);
+        e.x = c2.x + cx * (rx + extra) - e.w / 2; e.y = c2.y + cy * (ry + extra * .25) - e.h / 2;
       }
+      let mejor = muestras[0], dmin = Infinity;
+      for (const q of muestras) { const d = Math.hypot(q.x - (e.x + e.w / 2), q.y - (e.y + e.h / 2)); if (d < dmin) { dmin = d; mejor = q; } }
+      e.ax = mejor.x; e.ay = mejor.y;
+    });
+    // Se separan las que se pisan (unas pasadas alcanzan) y se mantienen dentro de la zona libre
+    for (let pasada = 0; pasada < 10; pasada++) {
+      for (const e of etiquetas) { e.x = Math.min(Math.max(e.x, minX), maxX - e.w); e.y = Math.min(Math.max(e.y, minY), maxY - e.h); }
+      for (let i = 0; i < etiquetas.length; i++) for (let j = i + 1; j < etiquetas.length; j++) {
+        const a = etiquetas[i], b = etiquetas[j], sx = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x) + 8, sy = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y) + 6;
+        if (sx > 0 && sy > 0) { if (sy < sx) { const m = sy / 2 * Math.sign((b.y - a.y) || 1); a.y -= m; b.y += m; } else { const m = sx / 2 * Math.sign((b.x - a.x) || 1); a.x -= m; b.x += m; } }
+      }
+    }
+    // Salen del tramo en cascada y quedan quietas; con movimiento reducido aparecen directo
+    for (const e of etiquetas) {
+      const p = vivo ? Math.min(1, Math.max(0, (ahora - tCambio - e.k * 45) / 520)) : 1, s = 1 - (1 - p) ** 3;
+      e.px = e.ax + (e.x + e.w / 2 - e.ax) * s - e.w / 2; e.py = e.ay + (e.y + e.h / 2 - e.ay) * s - e.h / 2; e.p = s;
+      e.el.style.transform = `translate(${e.px.toFixed(1)}px,${e.py.toFixed(1)}px) scale(${(.6 + .4 * s).toFixed(3)})`; e.el.style.opacity = s.toFixed(3);
+    }
+    return true;
+  }
+  function dibujarRayos(ahora) {
+    const hay = ubicarEtiquetas(ahora);
+    if (!hay) { if (!rayosLimpio) { rctx.clearRect(0, 0, lienzoRayos.width, lienzoRayos.height); rayosLimpio = true; } return; }
+    if (ahora - rayosDibujo < 33) return; rayosDibujo = ahora; rayosLimpio = false;
+    const dpr = lienzoRayos.width / innerWidth, col = ESPECTRO[activa], rgb = `${col >> 16 & 255},${col >> 8 & 255},${col & 255}`;
+    rctx.setTransform(dpr, 0, 0, dpr, 0, 0); rctx.clearRect(0, 0, innerWidth, innerHeight);
+    rctx.globalCompositeOperation = 'lighter'; rctx.lineCap = 'round';
+    const fuerza = cur.park * cur.o;
+    for (const e of etiquetas) {
+      if (!e.p) continue;
+      const fx = e.px + e.w / 2, fy = e.py + e.h / 2;
+      // Haz: más ancho y tenue en el ∞, fino y firme al llegar a la etiqueta
+      const g = rctx.createLinearGradient(e.ax, e.ay, fx, fy);
+      g.addColorStop(0, `rgba(${rgb},${(.9 * fuerza).toFixed(3)})`); g.addColorStop(1, `rgba(${rgb},${(.35 * fuerza * e.p).toFixed(3)})`);
+      for (const [ancho, alfa] of [[7, .14], [1.4, 1]]) { rctx.globalAlpha = alfa; rctx.strokeStyle = g; rctx.lineWidth = ancho; rctx.beginPath(); rctx.moveTo(e.ax, e.ay); rctx.lineTo(fx, fy); rctx.stroke(); }
+      rctx.globalAlpha = 1; rctx.fillStyle = `rgba(${rgb},${fuerza.toFixed(3)})`; rctx.beginPath(); rctx.arc(e.ax, e.ay, 2.6, 0, 7); rctx.fill();
     }
   }
   const azulCuenta = new THREE.Color(0x3d68ff), azulBrillo = new THREE.Color(0x1b3cff), tono = new THREE.Color();
@@ -87,7 +151,7 @@ try {
   const tray = document.querySelector('[data-trayectoria]');
   const ANCHO = 6.6; // ancho del ∞ en unidades del mundo
   let activa = 0, rayo = 1, nx = 0, ny = 0;
-  document.addEventListener('etapa', e => { if (e.detail !== activa) { activa = e.detail; rayo = quieto() ? 1 : 0; rayos = rayos.map(nuevoRayo); rayosDibujo = 0; } });
+  document.addEventListener('etapa', e => { if (e.detail !== activa) { activa = e.detail; rayo = quieto() ? 1 : 0; armarEtiquetas(); } });
   // Portada: el ∞ queda quieto. Se inclina un poco hacia el mouse y se gira arrastrando con el clic izquierdo (con inercia).
   let arrastre = null, vel = 0, incl = 0, ultimo = null, giro = 0;
   const unidad = () => 2 * camera.position.z * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) / innerHeight;
@@ -117,7 +181,7 @@ try {
   };
   medir(); addEventListener('resize', medir);
 
-  const anchoPx = (tipo, r) => tipo === 'portada' ? (innerWidth < 860 ? r.width * .92 : Math.min(r.width * .52, r.height * 1.25, 820)) : Math.min(r.width * .9, r.height * 1.8);
+  const anchoPx = (tipo, r) => tipo === 'portada' ? (innerWidth < 860 ? r.width * .92 : Math.min(r.width * .52, r.height * 1.25, 820)) : innerWidth > 860 ? Math.max(240, Math.min(r.width * .46, r.height * 1.25, (innerWidth - 2 * (16 + 300) - 70) / 1.5)) : Math.min(r.width * .9, r.height * 1.8);
   const progresoTray = () => { if (!tray) return 0; const r = tray.getBoundingClientRect(); return Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - innerHeight))); };
   function objetivo() {
     const H = innerHeight, u = unidad();
@@ -136,6 +200,14 @@ try {
   const ahora0 = objetivo(), cur = { x: ahora0.x, y: ahora0.y, s: ahora0.s, o: ahora0.o, park: ahora0.w.trayectoria, ry: 0, rx: .2 };
   let antes = performance.now(), dibujado = 0, corriendo = false;
   const v = new THREE.Vector3(), b = new THREE.Vector3();
+  // Zoom por etapa (pedido del dueño): en el ciclo la cámara se acerca al tramo activo y lo centra en la zona de abajo.
+  // «foco» es el punto de la curva que se centra; se interpola, así al cambiar de etapa el encuadre viaja por el bucle.
+  const ZOOM = () => innerWidth > 860 ? 1.5 : 1.3;
+  const foco = new THREE.Vector3(), focoMeta = new THREE.Vector3(), corrido = new THREE.Vector3();
+  const textoCiclo = document.querySelector('.tray-pasos'), espectroCiclo = document.querySelector('.espectro');
+  // Ancho de una columna de etiquetas: la etiqueta más ancha de la etapa, su escalonado y el aire hasta el tubo
+  const columnaEtq = () => (etiquetas.length ? Math.max(...etiquetas.map(e => e.w)) : 220) + 30 + 34;
+  curva.getPoint(centro(0), foco);
   const suave = x => 1 - (1 - x) ** 3;
 
   function paso(dt) {
@@ -150,8 +222,26 @@ try {
     const px = o.x + nx * .1 * mouse * o.w.portada, py = o.y - ny * .07 * mouse * o.w.portada;
     // Sólo se vuelve a dibujar el 3D si algo se movió: con la página quieta la GPU descansa.
     let cambio = rayo < 1 || !!arrastre || Math.abs(vel) > 1e-4 || Math.abs(incl) > 1e-4;
-    for (const [c, val] of [['x', px], ['y', py], ['s', o.s], ['o', o.o], ['park', wt], ['ry', ry], ['rx', rx]]) { const nuevo = mezclar(cur[c], val, k); if (Math.abs(nuevo - cur[c]) > 1e-5) cambio = true; cur[c] = nuevo; }
-    grupo.position.set(cur.x, cur.y, 0); grupo.scale.setScalar(cur.s); grupo.rotation.set(cur.rx, cur.ry, 0); grupo.updateMatrixWorld();
+    const sMeta = o.s * (1 + (ZOOM() - 1) * wt);
+    for (const [c, val] of [['x', px], ['y', py], ['s', sMeta], ['o', o.o], ['park', wt], ['ry', ry], ['rx', rx]]) { const nuevo = mezclar(cur[c], val, k); if (Math.abs(nuevo - cur[c]) > 1e-5) cambio = true; cur[c] = nuevo; }
+    curva.getPoint(centro(activa), focoMeta);
+    if (foco.distanceToSquared(focoMeta) > 1e-8) { foco.lerp(focoMeta, quieto() ? 1 : .08); cambio = true; }
+    grupo.scale.setScalar(cur.s); grupo.rotation.set(cur.rx, cur.ry, 0);
+    // El punto enfocado (rotado y escalado) se lleva al centro del lugar; fuera del ciclo no hay corrimiento.
+    corrido.copy(foco).applyEuler(grupo.rotation).multiplyScalar(cur.s * cur.park);
+    grupo.position.set(cur.x - corrido.x, cur.y - corrido.y, 0); grupo.updateMatrixWorld();
+    // En el ciclo el ∞ entero queda entre el texto y el espectro: si al centrar el tramo se pasa, se corre lo justo.
+    if (cur.park > .05) {
+      const panel = textoCiclo?.getBoundingClientRect(), pie = espectroCiclo?.getBoundingClientRect(), u = unidad(), grosor = .42 * cur.s / u;
+      let arriba = Infinity, abajo = -Infinity, izq = Infinity, der = -Infinity;
+      for (let m = 0; m < 24; m++) { pantalla(curva.getPoint(m / 24, v), c2); arriba = Math.min(arriba, c2.y - grosor); abajo = Math.max(abajo, c2.y + grosor); izq = Math.min(izq, c2.x - grosor); der = Math.max(der, c2.x + grosor); }
+      const tope = (panel ? panel.bottom : 0) + 4, piso = (pie ? pie.top : innerHeight) - 6;
+      let dy = 0; if (abajo > piso) dy = abajo - piso; else if (arriba < tope) dy = Math.max(arriba - tope, abajo - piso);
+      // En escritorio quedan libres las dos columnas de etiquetas, una a cada lado
+      const col = enDesktop() ? columnaEtq() : 0, limIzq = 16 + col, limDer = innerWidth - 16 - col;
+      let dx = 0; if (izq < limIzq && der > limDer) dx = (izq + der) / 2 - innerWidth / 2; else if (izq < limIzq) dx = izq - limIzq; else if (der > limDer) dx = der - limDer;
+      if (dy || dx) { grupo.position.y += dy * u * cur.park; grupo.position.x -= dx * u * cur.park; grupo.updateMatrixWorld(); }
+    }
     // Espectro: todos los tramos se ven tenues con su color; el de la etapa activa sale como un rayo que lo recorre y queda encendido.
     tramos.forEach((m, i) => {
       const si = i === activa, op = mezclar(m.material.opacity, cur.park * (si ? 1 : .5), k);
@@ -183,7 +273,7 @@ try {
     requestAnimationFrame(tic);
   };
   const arrancar = () => { if (corriendo) return; corriendo = true; antes = performance.now(); requestAnimationFrame(tic); };
-  paso(0); renderer.render(scene, camera); raiz.dataset.tres = '';
+  armarEtiquetas(); paso(0); renderer.render(scene, camera); raiz.dataset.tres = '';
   document.addEventListener('visibilitychange', arrancar);
   canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); corriendo = false; delete raiz.dataset.tres; capa.style.opacity = 0; });
   canvas.addEventListener('webglcontextrestored', () => { raiz.dataset.tres = ''; arrancar(); });

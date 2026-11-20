@@ -276,8 +276,13 @@ const deHex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
   const cv = $('[data-ascii]'); if (!cv) return;
   const ctx = cv.getContext('2d');
   const RAMPA = ' .·:-=+*#%@', CUBETAS = 7;
-  let cw, ch, cols, filas, lum = null, lw = 0, lh = 0, dpr = 1, t = 0, antes = 0, ultimo = 0, corriendo = false;
-  let px = -1e4, py = -1e4, ox = -1e4, oy = -1e4, ondas = [], movido = 0;
+  // Rastro del puntero: letras y signos que el fondo no usa, más gruesos, con los colores del espectro del Ciclo
+  const GLIFOS = 'ABCDEFGHJKLMNPRSTUVWXYZ0123456789$&?!<>/\\{}[]()^~', COLORES = [[155, 123, 255], [77, 124, 255], [34, 196, 255], [46, 230, 168], [184, 240, 74], [255, 201, 61], [255, 138, 61], [255, 79, 139]];
+  const VIDA_RASTRO = 1400;
+  let cw = 9, ch = 15, cols, filas, lum = null, lw = 0, lh = 0, dpr = 1, t = 0, antes = 0, ultimo = 0, corriendo = false;
+  let ondas = [], movido = 0, ultX = null, ultY = null, recorrido = 0;
+  const rastro = new Map(); // celda → { c, col, t }
+  const fuente = () => `500 ${ch * .78}px "IBM Plex Mono", ui-monospace, monospace`;
   const img = new Image(); img.src = 'ciudad-puntos.png';
   function muestrear() {
     // La grilla de luminancia es 1,6 veces más alta que la pantalla para poder derivar con el scroll.
@@ -294,7 +299,10 @@ const deHex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
   }
   function medir() {
     dpr = Math.min(devicePixelRatio || 1, 1.5);
-    const chico = innerWidth < 760; cw = chico ? 11 : 9; ch = chico ? 18 : 15;
+    ch = innerWidth < 760 ? 18 : 15;
+    // El ancho de cada columna es el avance real de la letra: con un valor fijo las filas quedaban comprimidas
+    // a la izquierda (el lado derecho sin ASCII) y la onda del clic salía corrida respecto del mouse.
+    ctx.font = fuente(); cw = ctx.measureText('M').width || 9;
     cv.width = innerWidth * dpr; cv.height = innerHeight * dpr;
     cols = Math.ceil(innerWidth / cw); filas = Math.ceil(innerHeight / ch);
     if (img.complete && img.naturalWidth) muestrear();
@@ -303,22 +311,23 @@ const deHex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
   function dibujar() {
     if (!lum) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, innerWidth, innerHeight);
-    ctx.font = `500 ${ch * .78}px "IBM Plex Mono", ui-monospace, monospace`; ctx.textBaseline = 'top';
+    ctx.font = fuente(); ctx.textBaseline = 'top';
     // En la portada manda la ciudad en puntos del sitio anterior: el ASCII queda tenue y toma fuerza al bajar.
     const deriva = Math.floor(scrollY / ch * .18) % (lh - filas), portada = .3 + .7 * Math.min(1, scrollY / innerHeight);
-    const R = 170, filasTxt = Array.from({ length: CUBETAS }, () => new Array(filas));
+    const filasTxt = Array.from({ length: CUBETAS }, () => new Array(filas));
     const ya = performance.now(); ondas = ondas.filter(o => ya - o.t < 1500);
+    for (const [k, r] of rastro) if (ya - r.t > VIDA_RASTRO) rastro.delete(k);
     for (let y = 0; y < filas; y++) {
       const lineas = Array.from({ length: CUBETAS }, () => []);
       for (let x = 0; x < cols; x++) {
+        if (rastro.has(y * cols + x)) { for (let j = 0; j < CUBETAS; j++) lineas[j].push(' '); continue; }
         const base = lum[(y + deriva) * lw + x] || 0;
         const onda = .5 + .5 * Math.sin(x * .16 + y * .1 - t * 1.1);
-        const dx = x * cw - px, dy = y * ch - py, cerca = Math.max(0, 1 - Math.hypot(dx, dy) / R) ** 2;
         // Anillo que sale del clic y se apaga mientras se abre
         let anillo = 0;
         for (const o of ondas) { const e = ya - o.t, d = Math.hypot(x * cw - o.x, y * ch - o.y); anillo += Math.max(0, 1 - Math.abs(d - e * .75) / 42) * (1 - e / 1500); }
-        const v = Math.min(1, base * (.7 + onda * .45) + cerca * .75 + anillo * .9);
-        const a = Math.min(.95, (.05 + base * .2 + onda * base * .08 + cerca * .7) * portada + anillo * .7);
+        const v = Math.min(1, base * (.7 + onda * .45) + anillo * .9);
+        const a = Math.min(.95, (.05 + base * .2 + onda * base * .08) * portada + anillo * .7);
         const k = Math.min(CUBETAS - 1, Math.floor(a * CUBETAS));
         const c = v < .06 ? ' ' : RAMPA[Math.min(RAMPA.length - 1, Math.floor(v * RAMPA.length))];
         for (let j = 0; j < CUBETAS; j++) lineas[j].push(j === k ? c : ' ');
@@ -330,30 +339,57 @@ const deHex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
       ctx.fillStyle = `rgba(${r},${g},${b},${((j + .5) / CUBETAS).toFixed(3)})`;
       for (let y = 0; y < filas; y++) if (filasTxt[j][y].trim()) ctx.fillText(filasTxt[j][y], 0, y * ch);
     }
+    // El rastro va arriba, en negrita y más grande, y se apaga de a poco
+    if (rastro.size) {
+      ctx.font = `700 ${ch * .92}px "IBM Plex Mono", ui-monospace, monospace`; ctx.textAlign = 'center';
+      for (const [celda, { c, col, t: t0 }] of rastro) {
+        const vida = 1 - (ya - t0) / VIDA_RASTRO, x = celda % cols, y = (celda - x) / cols;
+        ctx.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},${(vida * vida).toFixed(3)})`;
+        ctx.fillText(c, x * cw + cw / 2, y * ch - 1);
+      }
+      ctx.textAlign = 'start';
+    }
   }
-  // Onda a 20 cuadros por segundo; quieto, sólo redibuja con el puntero o el scroll.
+  // Suma las celdas que el puntero cruzó desde el último evento, con un vecino al azar cuando va rápido
+  function trazar(xp, yp) {
+    if (ultX === null) { ultX = xp; ultY = yp; }
+    const dx = xp - ultX, dy = yp - ultY, pasos = Math.max(1, Math.ceil(Math.max(Math.abs(dx) / cw, Math.abs(dy) / ch))), rapido = Math.hypot(dx, dy) > 40, ya = performance.now();
+    for (let s = 1; s <= pasos; s++) {
+      const x = Math.floor((ultX + dx * s / pasos) / cw), y = Math.floor((ultY + dy * s / pasos) / ch);
+      recorrido++;
+      const marcar = (cx, cy) => { if (cx < 0 || cy < 0 || cx >= cols || cy >= filas) return; rastro.set(cy * cols + cx, { c: GLIFOS[Math.random() * GLIFOS.length | 0], col: COLORES[(recorrido >> 2) % COLORES.length], t: ya }); };
+      marcar(x, y);
+      if (rapido && Math.random() < .5) marcar(x + (Math.random() < .5 ? -1 : 1), y + (Math.random() < .5 ? 0 : Math.random() < .5 ? -1 : 1));
+    }
+    ultX = xp; ultY = yp;
+  }
+  // Onda lenta a 12 cuadros; a 30 mientras hay rastro, una onda de clic o el puntero se mueve.
   const tic = ahora => {
     if (document.hidden) { corriendo = false; return; }
     const dt = Math.min(.1, (ahora - antes) / 1000); antes = ahora;
-    ox += (px - ox) * .2; oy += (py - oy) * .2;
     if (!quieto()) t += dt;
     const cambiaColor = acercarTinte();
-    // Rinde: a 30 cuadros mientras el puntero se mueve o hay una onda; si no, la onda lenta alcanza con 12.
-    const vivo = ondas.length || ahora - movido < 400 || Math.abs(px - ox) + Math.abs(py - oy) > 1;
-    if (ahora - ultimo >= (vivo ? 33 : 80)) { const tx = px, ty = py; px = ox; py = oy; dibujar(); px = tx; py = ty; ultimo = ahora; }
-    if (quieto() && !cambiaColor && Math.abs(px - ox) + Math.abs(py - oy) < 1) { corriendo = false; return; }
+    const vivo = ondas.length || rastro.size || ahora - movido < 400;
+    if (ahora - ultimo >= (vivo ? 33 : 80)) { dibujar(); ultimo = ahora; }
+    if (quieto() && !cambiaColor && !rastro.size && !ondas.length) { corriendo = false; return; }
     requestAnimationFrame(tic);
   };
   function pedir() { if (!corriendo) { corriendo = true; antes = performance.now(); requestAnimationFrame(tic); } }
-  // Un clic en un lugar vacío manda una onda que recorre la ciudad en caracteres
+  // Un clic en un lugar vacío manda una onda que recorre la ciudad en caracteres, con su sonido
   addEventListener('pointerdown', e => {
     if (quieto() || e.button !== 0 || e.target.closest('a,button,input,label,select,textarea,[role="button"],iframe,.celular') || raiz.hasAttribute('data-sobre-bucle')) return;
-    ondas.push({ x: e.clientX, y: e.clientY, t: performance.now() }); if (ondas.length > 3) ondas.shift(); pedir();
+    ondas.push({ x: e.clientX, y: e.clientY, t: performance.now() }); if (ondas.length > 3) ondas.shift();
+    sonar('click', { tono: .6 + Math.random() * .7, vol: .28 }); pedir();
   });
-  addEventListener('pointermove', e => { px = e.clientX; py = e.clientY; movido = performance.now(); if (ox < -1e3) { ox = px; oy = py; } pedir(); }, { passive: true });
-  document.documentElement.addEventListener('pointerleave', () => { px = py = -1e4; pedir(); });
-  addEventListener('scroll', pedir, { passive: true });
-  addEventListener('resize', medir);
+  addEventListener('pointermove', e => {
+    movido = performance.now();
+    if (e.pointerType === 'mouse' && !quieto()) trazar(e.clientX, e.clientY);
+    pedir();
+  }, { passive: true });
+  document.documentElement.addEventListener('pointerleave', () => { ultX = ultY = null; });
+  addEventListener('scroll', () => { ultX = ultY = null; pedir(); }, { passive: true });
+  addEventListener('resize', () => { rastro.clear(); medir(); });
+  document.fonts?.ready.then(() => { rastro.clear(); medir(); });
   document.addEventListener('visibilitychange', pedir); document.addEventListener('movimiento', pedir); document.addEventListener('tono', pedir);
   img.onload = () => { muestrear(); pedir(); }; img.onerror = () => { muestrear(); pedir(); };
   medir();
@@ -411,6 +447,19 @@ document.addEventListener('idioma', iconizar);
     if (!empresa) return;
     $$('dt', pasos[i]).forEach(dt => { const dd = dt.nextElementSibling, si = dt.textContent.includes(empresa); dd?.toggleAttribute('data-menciona', si); dd?.toggleAttribute('data-atenua', !si); });
   };
+  // Desde las etiquetas de los rayos: una herramienta usa el resaltado de su chip; una metodología busca su término en las frases
+  // de la etapa y en su buena práctica. Un toque en una metodología la deja fija hasta cambiar de etapa o tocarla de nuevo.
+  let fijada = null;
+  window.cvResaltar = (texto, chip, fijar) => {
+    const li = pasos[actual]; if (!li) return;
+    if (chip) { chip.dispatchEvent(new PointerEvent(texto ? 'pointerenter' : 'pointerleave')); return; }
+    if (fijar) fijada = fijada === texto ? null : texto;
+    const termino = (fijar ? fijada : texto || fijada)?.toLowerCase();
+    const partes = [...$$('dd', li), ...$$('.practica', li)];
+    const usa = el => !!termino && el.textContent.toLowerCase().includes(termino), alguno = partes.some(usa);
+    partes.forEach(el => { el.toggleAttribute('data-menciona', alguno && usa(el)); el.toggleAttribute('data-atenua', alguno && !usa(el)); });
+  };
+  document.addEventListener('etapa', () => { fijada = null; });
   // Con la sección fija, cada paso de la rueda es una etapa (en el trackpad se juntan los deltas chicos). En la primera y la
   // última etapa el paso siguiente sale de la sección, sin pasos muertos.
   let acumulado = 0, bloqueo = 0;
@@ -608,7 +657,7 @@ if (matchMedia('(hover:hover) and (pointer:fine)').matches) (function estela() {
   }, { passive: true });
   raiz.addEventListener('pointerleave', () => { dentro = false; pedir(); });
   function tic(ahora) {
-    if (dentro && !quieto()) { hx += (tx - hx) * .42; hy += (ty - hy) * .42; rastro.push({ x: hx, y: hy, t: ahora }); }
+    // La cinta de color ya no se dibuja: el rastro del puntero ahora son letras en el fondo ASCII
     while (rastro.length && ahora - rastro[0].t > VIDA) rastro.shift();
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, innerWidth, innerHeight); ctx.lineCap = 'round';
     const [r, g, b] = tinte;
@@ -699,10 +748,10 @@ if (matchMedia('(hover:hover) and (pointer:fine)').matches) {
   centrar(); addEventListener('resize', centrar);
 })();
 
-// ——— Celular: en las etapas con práctica, dos pestañas («Lo que hice» / «Cómo lo hago») para que el panel entre sin tapar el espectro ———
+// ——— Celular: en las etapas con práctica, dos pestañas («Experiencia» / «Buena práctica») para que el panel entre sin tapar el espectro ———
 (function vistasEtapa() {
   const pasos = $$('[data-paso]').filter(li => $('.practica', li));
-  const rotular = () => pasos.forEach(li => $$('.vista', li).forEach((b, k) => { b.textContent = k ? t('Cómo lo hago', 'How I do it') : t('Lo que hice', 'What I did'); }));
+  const rotular = () => pasos.forEach(li => $$('.vista', li).forEach((b, k) => { b.textContent = k ? t('Buena práctica', 'Best practice') : t('Experiencia', 'Experience'); }));
   pasos.forEach(li => {
     const barra = document.createElement('div'); barra.className = 'vistas'; barra.setAttribute('role', 'group');
     barra.innerHTML = '<button type="button" class="vista" aria-pressed="true"></button><button type="button" class="vista" aria-pressed="false"></button>';

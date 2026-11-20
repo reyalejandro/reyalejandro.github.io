@@ -990,3 +990,71 @@ html[data-movimiento="off"] .estrellas i { animation:none!important; }
 .dato.principal { background:linear-gradient(180deg,#3456ec,#1a33c4) padding-box, linear-gradient(180deg,rgb(255 255 255 / .7),rgb(255 255 255 / .12) 50%,rgb(10 20 80 / .7)) border-box; }
 .dato.principal dt { color:#fff; }
 @media (max-width:360px) { .dato dt { font-size:.6875rem; letter-spacing:.03em; } .dato { padding:7px 8px 8px; } .dato dd { font-size:1.02rem; } }
+
+/* ——— Rayos con contenido: etiquetas de herramientas y metodologías alrededor del ∞ (escritorio) ——— */
+.rayos-etq { position:fixed; inset:0; z-index:7; pointer-events:none; opacity:0; transition:opacity .35s ease; }
+.rayos-etq .etq { position:absolute; left:0; top:0; display:inline-flex; align-items:center; gap:7px; padding:7px 11px; border-radius:10px; white-space:nowrap; cursor:pointer;
+  font:500 .75rem/1 var(--mono); transform-origin:center; will-change:transform; pointer-events:auto;
+  transition:background .2s ease, color .2s ease, box-shadow .2s ease; }
+.rayos-etq:not([data-visible]) .etq { pointer-events:none; }
+.rayos-etq .etq.herr { color:var(--tinta); background:rgb(14 16 28 / .86); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
+  box-shadow:inset 0 1px 0 rgb(255 255 255 / .1), inset 0 0 0 1px color-mix(in oklab,var(--c) 50%,transparent), 0 8px 18px -10px rgb(0 0 0 / .8); }
+.rayos-etq .etq.herr svg { width:15px; height:15px; fill:var(--c); flex:none; }
+.rayos-etq .etq.metodo { color:color-mix(in oklab,var(--c) 55%,#fff); background:color-mix(in oklab,var(--c) 14%,rgb(10 12 22 / .9)); letter-spacing:.06em; text-transform:uppercase; font-size:.6875rem;
+  box-shadow:inset 0 0 0 1px color-mix(in oklab,var(--c) 75%,transparent); }
+.rayos-etq .etq.metodo::before { content:""; width:6px; height:6px; flex:none; transform:rotate(45deg); background:var(--c); }
+.rayos-etq .etq:hover { color:#fff; background:color-mix(in oklab,var(--c) 34%,rgb(10 12 22 / .9)); box-shadow:inset 0 0 0 1px var(--c), 0 10px 24px -10px var(--c); }
+/* En escritorio las herramientas están en los rayos: el panel las conserva sólo para lectores de pantalla y para el resaltado */
+@media (min-width:861px) { .tray-pasos .herramientas { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; } }
+.tray-pasos .practica[data-menciona] { box-shadow:inset 0 0 0 1px var(--c), 0 0 0 4px color-mix(in oklab,var(--c) 18%,transparent); }
+.tray-pasos .practica[data-atenua] { opacity:.45; }
+@media print { .rayos-etq { display:none!important; } }
+/* Celulares angostos: los textos profesionales son más largos; el ∞ cede un poco de alto para que ninguna etapa tape el espectro */
+@media (max-width:400px) { .trayectoria .tray-marco { grid-template-rows:auto minmax(88px,20svh) 1fr auto; } }
+
+
+/* Escritorio con poca altura (1280×720, 1366×768): panel más compacto para que ninguna etapa tape el espectro */
+@media (min-width:861px) and (max-height:800px) {
+  .trayectoria .tray-cabeza .titulo { font-size:clamp(2.8rem,6vw,5rem); }
+  .trayectoria .tray-marco { gap:12px clamp(24px,5vw,80px); padding-block:32px 18px; }
+  .tray-pasos .etapa-datos h3 { font-size:clamp(2.2rem,3.6vw,3.4rem); }
+  .tray-pasos .etapa-datos dt { margin-top:8px; }
+  .tray-pasos .etapa-datos dd { font-size:.9375rem; line-height:1.42; }
+  .practica { margin-top:10px; padding:10px 12px; grid-template-columns:72px minmax(0,1fr); }
+  .practica .iso { width:72px; }
+  .practica h4 + p { font-size:.875rem; }
+}
+
+/* ═══ Ciclo DevOps centrado (pedido del dueño, 20/11 a la noche: «∞ abajo, texto arriba», ambos centrados) ═══
+   Columna única: título compacto, el texto de la etapa centrado arriba, el ∞ abajo con zoom a su tramo y el espectro al pie.
+   Las etapas se apilan en la misma celda de grilla, así el bloque mide lo que la etapa más alta y nada salta. */
+html[data-vivo] .tray-pasos { display:grid; }
+html[data-vivo] .tray-pasos > li { grid-area:1/1; position:relative; inset:auto; }
+.trayectoria .tray-marco { grid-template-columns:minmax(0,1fr); grid-template-rows:auto auto minmax(0,1fr) auto; gap:8px; padding-block:22px 16px; }
+.trayectoria .tray-cabeza { grid-row:1; grid-column:1; justify-content:center; text-align:center; }
+.trayectoria .tray-cabeza .titulo { font-size:clamp(2rem,4vw,3.4rem); }
+.tray-pasos { grid-row:2; grid-column:1; align-self:start; justify-self:center; width:min(100%,900px); min-height:0; }
+.tray-lienzo { grid-row:3; grid-column:1; min-height:160px; }
+.espectro { grid-row:4; }
+/* Velo detrás del texto: el ∞ ampliado pasa por debajo sin cruzarse con las letras */
+.tray-pasos::before { content:""; position:absolute; inset:-28px -12%; z-index:-1; pointer-events:none; background:radial-gradient(closest-side,var(--fondo) 62%,transparent); }
+.tray-pasos .etapa-datos { text-align:center; }
+.tray-pasos .etapa-datos h3 { font-size:clamp(2rem,3.6vw,3.4rem); }
+.tray-pasos .etapa-datos dl { display:grid; grid-template-rows:auto auto; grid-auto-flow:column; grid-auto-columns:minmax(0,1fr); gap:2px 32px; margin:10px auto 0; text-align:left; }
+.tray-pasos .etapa-datos dt { margin-top:6px; }
+.tray-pasos .etapa-datos dd { font-size:.9375rem; line-height:1.45; }
+.tray-pasos .practica { max-width:720px; margin:12px auto 0; text-align:left; }
+.tray-pasos .vistas { margin-inline:auto; }
+@media (min-width:861px) and (max-height:800px) {
+  .trayectoria .tray-cabeza .titulo { font-size:clamp(1.8rem,3.2vw,2.6rem); }
+  .tray-pasos .etapa-datos h3 { font-size:clamp(1.8rem,3vw,2.6rem); }
+  .tray-pasos .practica { margin-top:8px; }
+}
+@media (max-width:860px) {
+  .trayectoria .tray-marco { grid-template-rows:auto auto minmax(96px,1fr) auto; gap:8px; padding-block:22px 12px; }
+  .tray-pasos { grid-row:2; width:100%; }
+  .tray-lienzo { grid-row:3; min-height:96px; }
+  .tray-pasos .etapa-datos dl { display:block; }
+  .tray-pasos::before { inset:-16px -8%; }
+}
+.trayectoria .espectro { position:relative; z-index:7; }
