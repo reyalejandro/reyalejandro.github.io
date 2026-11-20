@@ -215,7 +215,7 @@ requestAnimationFrame(() => requestAnimationFrame(() => { if (quieto()) titulos.
 
 
 // ——— Las viñetas de backstage se animan al verse ———
-$$('[data-pase]').forEach(f => new IntersectionObserver(([e], io) => { if (e.isIntersecting && !quieto()) { f.toggleAttribute('data-visto', true); io.disconnect(); } }, { threshold: .5 }).observe(f));
+$$('[data-pase]:not(.practica)').forEach(f => new IntersectionObserver(([e], io) => { if (e.isIntersecting && !quieto()) { f.toggleAttribute('data-visto', true); io.disconnect(); } }, { threshold: .5 }).observe(f));
 
 // ——— En vivo: estado.json de la rama datos (lo escribe el workflow estado.yml cada hora) ———
 (async function enVivo() {
@@ -386,6 +386,9 @@ document.addEventListener('idioma', iconizar);
     if (i === actual) return;
     $$('dd[data-menciona], dd[data-atenua]', sec).forEach(dd => { dd.removeAttribute('data-menciona'); dd.removeAttribute('data-atenua'); });
     pasos.forEach((li, k) => { li.toggleAttribute('data-actual', k === i); li.toggleAttribute('data-pasado', k < i); });
+    // La práctica de la etapa («Cómo lo hago») vuelve a animar su esquema cada vez que la etapa se activa
+    $$('.practica', sec).forEach(pr => pr.removeAttribute('data-visto'));
+    const pr = $('.practica', pasos[i]); if (pr && !quieto()) { void pr.offsetWidth; pr.toggleAttribute('data-visto', true); }
     botones.forEach((b, k) => { b.setAttribute('aria-pressed', String(k === i)); b.toggleAttribute('data-pasada', k < i); });
     sec.style.setProperty('--c-act', pasos[i].style.getPropertyValue('--c'));
     if (actual !== -1) {
@@ -694,6 +697,233 @@ if (matchMedia('(hover:hover) and (pointer:fine)').matches) {
 (function centrarEsquemas() {
   const centrar = () => { if (innerWidth > 700) return; $$('.arq, [data-secuencia]').forEach(c => { c.scrollLeft = (c.scrollWidth - c.clientWidth) / 2; }); };
   centrar(); addEventListener('resize', centrar);
+})();
+
+// ——— Celular: en las etapas con práctica, dos pestañas («Lo que hice» / «Cómo lo hago») para que el panel entre sin tapar el espectro ———
+(function vistasEtapa() {
+  const pasos = $$('[data-paso]').filter(li => $('.practica', li));
+  const rotular = () => pasos.forEach(li => $$('.vista', li).forEach((b, k) => { b.textContent = k ? t('Cómo lo hago', 'How I do it') : t('Lo que hice', 'What I did'); }));
+  pasos.forEach(li => {
+    const barra = document.createElement('div'); barra.className = 'vistas'; barra.setAttribute('role', 'group');
+    barra.innerHTML = '<button type="button" class="vista" aria-pressed="true"></button><button type="button" class="vista" aria-pressed="false"></button>';
+    $('dl', li).before(barra);
+    const bts = $$('.vista', barra);
+    bts.forEach((b, k) => b.addEventListener('click', () => {
+      bts.forEach((x, j) => x.setAttribute('aria-pressed', String(j === k)));
+      if (k) li.dataset.vista = 'como'; else delete li.dataset.vista;
+      const pr = $('.practica', li); if (k && pr && !quieto()) { pr.removeAttribute('data-visto'); void pr.offsetWidth; pr.toggleAttribute('data-visto', true); }
+      sonar('click', { tono: k ? 1.5 : 1.2, vol: .2 });
+    }));
+  });
+  rotular(); document.addEventListener('idioma', rotular);
+})();
+
+// ═══════════ 20/11 · fondos y funciones nuevas (pedido del dueño con design-unslopify) ═══════════
+
+// ——— E051 · hora en Buenos Aires con día o noche y la diferencia con el visitante; se actualiza al cambiar el minuto ———
+(function hora() {
+  const el = $('[data-hora]'); if (!el) return;
+  const ZONA = 'America/Argentina/Buenos_Aires', OFFSET_BA = -180; // ponytail: Argentina no usa horario de verano; si vuelve, calcular el offset con Intl
+  const SOL = '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3.2"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4"/></svg>';
+  const LUNA = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11.5 10.6A5 5 0 0 1 5.4 4.5a5 5 0 1 0 6.1 6.1Z"/></svg>';
+  const pintar = () => {
+    const ahora = new Date();
+    const hBA = Number(new Intl.DateTimeFormat('en-US', { timeZone: ZONA, hour: 'numeric', hourCycle: 'h23' }).format(ahora));
+    const texto = new Intl.DateTimeFormat(ingles ? 'en-US' : 'es-AR', { timeZone: ZONA, hour: '2-digit', minute: '2-digit', hour12: ingles }).format(ahora);
+    const dif = Math.round((OFFSET_BA + ahora.getTimezoneOffset()) / 60);
+    const rel = dif === 0 ? t('tu misma hora', 'same time as you') : dif > 0 ? t(`${dif} h más que vos`, `${dif} h ahead of you`) : t(`${-dif} h menos que vos`, `${-dif} h behind you`);
+    el.innerHTML = `${hBA >= 7 && hBA < 19 ? SOL : LUNA}<time>${texto}</time> · ${rel}`;
+  };
+  pintar(); document.addEventListener('idioma', pintar);
+  const programar = () => setTimeout(() => { pintar(); programar(); }, 60000 - Date.now() % 60000);
+  programar();
+})();
+
+// ——— E008 · curvas de nivel detrás de Experiencia: ruido de valor en una grilla de 64×36, marching squares, Catmull-Rom.
+// Se calcula en un Web Worker; cada 8 s cambia de forma con un fundido de 1,6 s y el puntero levanta una loma que las curvas rodean. ———
+(function topografia() {
+  const svg = $('[data-topo]'); if (!svg || !window.Worker) return;
+  const sec = svg.closest('section'), [g1, g2] = $$('g', svg);
+  const codigo = `
+  const hash = (x, y, s) => { let n = (x * 374761393 + y * 668265263 + s * 982451653) | 0; n = Math.imul(n ^ (n >>> 13), 1274126177); return ((n ^ (n >>> 16)) >>> 0) / 4294967295; };
+  const suav = t => t * t * (3 - 2 * t);
+  const ruido = (x, y, s) => { const xi = Math.floor(x), yi = Math.floor(y), u = suav(x - xi), v = suav(y - yi), a = hash(xi, yi, s), b = hash(xi + 1, yi, s), c = hash(xi, yi + 1, s), d = hash(xi + 1, yi + 1, s); return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v; };
+  const CASOS = [[], [['l','b']], [['b','r']], [['l','r']], [['t','r']], [['l','t'],['b','r']], [['t','b']], [['l','t']], [['l','t']], [['t','b']], [['t','r'],['l','b']], [['t','r']], [['l','r']], [['b','r']], [['l','b']], []];
+  self.onmessage = ({ data: { W, H, niveles, z, px, py } }) => {
+    const campo = new Float32Array((W + 1) * (H + 1)); let min = 9, max = -9;
+    for (let j = 0; j <= H; j++) for (let i = 0; i <= W; i++) {
+      let v = 0, amp = 1, fr = 1 / 11, tot = 0;
+      for (let o = 0; o < 3; o++) { v += ruido(i * fr, j * fr, z + o * 31) * amp; tot += amp; amp *= .5; fr *= 2; }
+      v /= tot; if (px > -1) { const d2 = (i - px) ** 2 + (j - py) ** 2; v += .3 * Math.exp(-d2 / 36); }
+      campo[j * (W + 1) + i] = v; if (v < min) min = v; if (v > max) max = v;
+    }
+    const val = (i, j) => campo[j * (W + 1) + i];
+    const salida = [];
+    for (let k = 0; k < niveles; k++) {
+      const L = min + (max - min) * (k + .5) / niveles, pt = new Map(), ady = new Map();
+      const punto = (i, j, lado) => {
+        const ii = lado === 'r' ? i + 1 : i, jj = lado === 'b' ? j + 1 : j, horiz = lado === 't' || lado === 'b', clave = (horiz ? 'h' : 'v') + ii + ',' + jj;
+        if (!pt.has(clave)) { const a = val(ii, jj), b = horiz ? val(ii + 1, jj) : val(ii, jj + 1), f = (L - a) / ((b - a) || 1e-9); pt.set(clave, horiz ? [ii + f, jj] : [ii, jj + f]); }
+        return clave;
+      };
+      const unir = (a, b) => { (ady.get(a) || ady.set(a, []).get(a)).push(b); (ady.get(b) || ady.set(b, []).get(b)).push(a); };
+      for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+        const c = (val(i, j) > L) << 3 | (val(i + 1, j) > L) << 2 | (val(i + 1, j + 1) > L) << 1 | (val(i, j + 1) > L);
+        for (const [a, b] of CASOS[c]) unir(punto(i, j, a), punto(i, j, b));
+      }
+      let d = '';
+      const quitar = (a, b) => { const l = ady.get(a); l.splice(l.indexOf(b), 1); };
+      const inicios = [...ady.keys()].sort((a, b) => ady.get(a).length - ady.get(b).length);
+      for (const ini of inicios) {
+        while (ady.get(ini).length) {
+          const linea = [ini]; let actual = ini;
+          while (ady.get(actual).length) { const sig = ady.get(actual)[0]; quitar(actual, sig); quitar(sig, actual); linea.push(sig); actual = sig; }
+          const p = linea.map(c => pt.get(c)); if (p.length < 3) continue;
+          const f = n => n.toFixed(2);
+          d += 'M' + f(p[0][0]) + ' ' + f(p[0][1]);
+          for (let n = 0; n < p.length - 1; n++) {
+            const p0 = p[n - 1] || p[n], p1 = p[n], p2 = p[n + 1], p3 = p[n + 2] || p2;
+            d += 'C' + f(p1[0] + (p2[0] - p0[0]) / 6) + ' ' + f(p1[1] + (p2[1] - p0[1]) / 6) + ' ' + f(p2[0] - (p3[0] - p1[0]) / 6) + ' ' + f(p2[1] - (p3[1] - p1[1]) / 6) + ' ' + f(p2[0]) + ' ' + f(p2[1]);
+          }
+        }
+      }
+      salida.push(d);
+    }
+    self.postMessage(salida);
+  };`;
+  let trabajador; try { trabajador = new Worker(URL.createObjectURL(new Blob([codigo], { type: 'text/javascript' }))); } catch { return; }
+  const chico = innerWidth < 760, W = 64, H = 36, niveles = chico ? 8 : 14;
+  let z = 1, visible = 0, ocupado = false, fundir = false, px = -1, py = -1, pendiente = false, enVista = false;
+  const capas = [g1, g2];
+  trabajador.onmessage = ({ data }) => {
+    ocupado = false;
+    const destino = fundir ? capas[1 - visible] : capas[visible];
+    // Cada cuarta curva es «maestra», como en los mapas: más marcada
+    destino.innerHTML = `<path d="${data.filter((_, k) => k % 4 !== 3).join('')}"/><path class="maestra" d="${data.filter((_, k) => k % 4 === 3).join('')}"/>`;
+    if (fundir) {
+      fundir = false; const viejo = capas[visible]; visible = 1 - visible;
+      if (quieto()) { destino.style.opacity = 1; viejo.style.opacity = 0; }
+      else { destino.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 1600, easing: 'ease-in-out', fill: 'forwards' }); viejo.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 1600, easing: 'ease-in-out', fill: 'forwards' }); }
+    }
+    if (pendiente) { pendiente = false; pedir(); }
+  };
+  const pedir = (cruzar = false) => { if (ocupado) { pendiente = true; return; } ocupado = true; fundir = cruzar; trabajador.postMessage({ W, H, niveles, z, px, py }); };
+  capas[0].style.opacity = 1; capas[1].style.opacity = 0; pedir();
+  setInterval(() => { if (enVista && !quieto() && !document.hidden) { z++; pedir(true); } }, 8000);
+  new IntersectionObserver(([e]) => { enVista = e.isIntersecting; }).observe(sec);
+  let ultimo = 0;
+  sec.addEventListener('pointermove', e => {
+    if (quieto() || e.pointerType !== 'mouse') return;
+    const ahora = performance.now(); if (ahora - ultimo < 90) return; ultimo = ahora;
+    const r = svg.getBoundingClientRect(), esc = Math.max(r.width / W, r.height / H); // preserveAspectRatio slice
+    px = (e.clientX - r.left - (r.width - W * esc) / 2) / esc; py = (e.clientY - r.top - (r.height - H * esc) / 2) / esc; pedir();
+  });
+  sec.addEventListener('pointerleave', () => { px = py = -1; pedir(); });
+})();
+
+// ——— E010 · separadores con estrellas: tres capas que se mueven a distinta velocidad con el scroll; 3 % titila ———
+(function estrellas() {
+  const seps = $$('.estrellas'); if (!seps.length) return;
+  const capa = (n, rmax, alfa) => {
+    const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d');
+    for (let k = 0; k < n; k++) { x.fillStyle = `rgba(232,236,255,${(alfa * (.5 + Math.random() * .5)).toFixed(2)})`; x.beginPath(); x.arc(Math.random() * 512, Math.random() * 512, .5 + Math.random() * rmax, 0, 7); x.fill(); }
+    return `url(${c.toDataURL()})`;
+  };
+  const densidad = .0009 * 512 * 512;
+  [[densidad * 1.2, .6, .45], [densidad * .7, .9, .7], [densidad * .35, 1.25, .95], [densidad * .03 * 3, 1.3, 1]].forEach(([n, r, a], k) => raiz.style.setProperty(`--estrellas-${k + 1}`, capa(Math.round(n), r, a)));
+  if (CSS.supports('animation-timeline: view()')) return;
+  // Sin línea de tiempo de scroll: un solo cuadro por scroll mueve las capas
+  let pedido = false;
+  addEventListener('scroll', () => { if (pedido) return; pedido = true; requestAnimationFrame(() => { pedido = false; seps.forEach(s => s.style.setProperty('--desp', (s.getBoundingClientRect().top / innerHeight).toFixed(3))); }); }, { passive: true });
+})();
+
+// ——— E009 · metal líquido detrás del contacto: dos gotas de cromo que se juntan y se separan; el puntero empuja la más cercana ———
+(function mercurio() {
+  const caja = $('[data-mercurio]'); if (!caja) return;
+  const sec = caja.closest('section'), gotas = $$('.gotas i', caja);
+  if (!matchMedia('(hover:hover) and (pointer:fine)').matches) return;
+  sec.addEventListener('pointermove', e => {
+    if (quieto()) return;
+    let cerca = null, dmin = Infinity, vx = 0, vy = 0;
+    gotas.forEach(g => { const r = g.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2), d = Math.hypot(dx, dy); if (d < dmin) { dmin = d; cerca = g; vx = dx; vy = dy; } });
+    gotas.forEach(g => { if (g !== cerca) { g.style.setProperty('--nx', '0px'); g.style.setProperty('--ny', '0px'); } });
+    const k = Math.min(30, dmin * .15) / (dmin || 1);
+    cerca.style.setProperty('--nx', (vx * k).toFixed(1) + 'px'); cerca.style.setProperty('--ny', (vy * k).toFixed(1) + 'px');
+  });
+  sec.addEventListener('pointerleave', () => gotas.forEach(g => { g.style.setProperty('--nx', '0px'); g.style.setProperty('--ny', '0px'); }));
+})();
+
+// ——— E240 · talones que se arrancan: se arrastra (o se toca) el talón perforado y detrás aparece un dato real de esa entrada ———
+(function talones() {
+  $$('[data-talon]').forEach(tal => {
+    const entrada = tal.closest('.entrada'), pegar = $('[data-pegar]', entrada);
+    let ini = null, dx = 0, dy = 0, arrastro = false;
+    const mover = () => tal.style.setProperty('--tx', `${dx}px`) || tal.style.setProperty('--ty', `${dy}px`) || tal.style.setProperty('--tr', `${(dx / 6).toFixed(1)}deg`);
+    const arrancar = () => {
+      entrada.toggleAttribute('data-arrancado', true); tal.setAttribute('aria-expanded', 'true'); sonar('success', { vol: .35 });
+      dx = dy = 0; mover(); setTimeout(() => pegar.focus({ preventScroll: true }), quieto() ? 0 : 420);
+    };
+    tal.addEventListener('pointerdown', e => { if (e.button) return; ini = { x: e.clientX, y: e.clientY }; arrastro = false; tal.setPointerCapture(e.pointerId); tal.toggleAttribute('data-tirando', true); });
+    tal.addEventListener('pointermove', e => {
+      if (!ini) return; dx = Math.max(-10, e.clientX - ini.x); dy = e.clientY - ini.y;
+      if (Math.hypot(dx, dy) > 6) arrastro = true; if (!quieto()) mover();
+    });
+    const soltar = () => {
+      if (!ini) return; ini = null; tal.removeAttribute('data-tirando');
+      if (!arrastro || Math.hypot(dx, dy) > 60) arrancar(); else { dx = dy = 0; mover(); }
+    };
+    tal.addEventListener('pointerup', soltar); tal.addEventListener('pointercancel', () => { ini = null; dx = dy = 0; mover(); tal.removeAttribute('data-tirando'); });
+    tal.addEventListener('click', e => { if (e.detail === 0) arrancar(); }); // teclado (Enter o espacio)
+    pegar.addEventListener('click', () => { entrada.removeAttribute('data-arrancado'); tal.setAttribute('aria-expanded', 'false'); sonar('click', { vol: .25 }); tal.focus({ preventScroll: true }); });
+  });
+})();
+
+// ——— E096 · ícono de pestaña vivo: en el Ciclo toma el color de la etapa y marca cuántas van; «Medir ahora» lo usa para mostrar
+// midiendo, listo o falla. Fuera del ciclo vuelve al ∞ de siempre. ———
+const iconoPestana = (() => {
+  const icono = $('[data-icono]'); if (!icono) return { etapa() {}, estado() {} };
+  const original = icono.href, LAZO = 'M16 16c-2.2-3.1-3.9-4.6-6-4.6a4.6 4.6 0 0 0 0 9.2c2.1 0 3.8-1.5 6-4.6s3.9-4.6 6-4.6a4.6 4.6 0 0 1 0 9.2c-2.1 0-3.8-1.5-6-4.6Z';
+  const svg = (color, parte, extra = '') => 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#0A0A0A"/><path d="${LAZO}" fill="none" stroke="#3a3f5c" stroke-width="2.6"/><path d="${LAZO}" pathLength="100" stroke-dasharray="${parte} 100" fill="none" stroke="${color}" stroke-width="2.8" stroke-linecap="round"/>${extra}</svg>`);
+  let enCiclo = false, ultima = null, midiendo = false;
+  const ciclo = $('[data-trayectoria]');
+  if (ciclo) new IntersectionObserver(([e]) => { enCiclo = e.isIntersecting; if (!midiendo) icono.href = enCiclo && ultima ? ultima : original; }, { rootMargin: '-45% 0px -45% 0px' }).observe(ciclo);
+  document.addEventListener('etapa', e => { const li = $$('[data-paso]')[e.detail]; if (!li) return; ultima = svg(li.style.getPropertyValue('--c').trim(), Math.round((e.detail + 1) / 8 * 100)); if (enCiclo && !midiendo) icono.href = ultima; });
+  return {
+    estado(tipo, parte = 30) {
+      midiendo = tipo === 'midiendo';
+      if (tipo === 'midiendo') icono.href = svg('#8FA6FF', parte);
+      else if (tipo === 'listo') icono.href = svg('#2EE6A8', 100);
+      else if (tipo === 'falla') icono.href = svg('#FF4F8B', 100);
+      if (tipo !== 'midiendo') setTimeout(() => { if (!midiendo) icono.href = enCiclo && ultima ? ultima : original; }, 2500);
+    },
+  };
+})();
+
+// ——— «Medir ahora»: desde el navegador del visitante, tres pedidos a cada sitio y la mediana; borde de luz mientras mide ———
+(function medirAhora() {
+  const caja = $('[data-medir]'); if (!caja) return;
+  const boton = $('[data-medir-boton]', caja), lista = $('[data-medir-res]', caja);
+  const SITIOS = [['masterpet.com.ar', 'https://masterpet.com.ar/', 'no-cors'], ['reyalejandro.github.io', location.origin + location.pathname, 'same-origin']];
+  const una = async (url, modo) => { const t0 = performance.now(); await fetch(url + (url.includes('?') ? '&' : '?') + 'medir=' + Date.now(), { mode: modo, cache: 'no-store', method: modo === 'no-cors' ? 'GET' : 'HEAD' }); return performance.now() - t0; };
+  boton.addEventListener('click', async () => {
+    if (caja.hasAttribute('data-midiendo')) return;
+    caja.toggleAttribute('data-midiendo', true); boton.setAttribute('aria-busy', 'true'); sonar('case', { vol: .3 });
+    lista.innerHTML = SITIOS.map(([n]) => `<li><b>${n}</b><span class="cifra">…</span></li>`).join('');
+    let hechos = 0, fallas = 0; const total = SITIOS.length * 3;
+    await Promise.all(SITIOS.map(async ([nombre, url, modo], k) => {
+      const tiempos = [];
+      for (let n = 0; n < 3; n++) {
+        try { tiempos.push(await una(url, modo)); } catch { fallas++; }
+        hechos++; iconoPestana.estado('midiendo', Math.round(hechos / total * 100));
+      }
+      const li = lista.children[k], cifra = $('.cifra', li);
+      if (!tiempos.length) { cifra.textContent = t('no respondió', 'no answer'); li.toggleAttribute('data-falla', true); return; }
+      const mediana = tiempos.sort((a, b) => a - b)[Math.floor(tiempos.length / 2)];
+      cifra.textContent = `${Math.round(mediana)} ms`; li.style.setProperty('--ms', Math.min(1, mediana / 1500).toFixed(3)); li.toggleAttribute('data-listo', true);
+    }));
+    caja.removeAttribute('data-midiendo'); boton.removeAttribute('aria-busy');
+    iconoPestana.estado(fallas === total ? 'falla' : 'listo'); sonar(fallas === total ? 'click' : 'success', { vol: .35 });
+  });
 })();
 
 // ——— PDF flotante: aparece después de la portada (en el celular desde el comienzo), se esconde en el ciclo fijo y en el contacto (ya tiene el suyo) y su anillo marca cuánto se leyó ———
