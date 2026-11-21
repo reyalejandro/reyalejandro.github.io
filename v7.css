@@ -1252,6 +1252,6 @@ button.etq3d { cursor:pointer; }
 .ver-todo[aria-pressed="true"] { background:color-mix(in oklab,var(--c-act,#8fa6ff) 30%,rgb(16 18 29 / .8)); border-color:var(--c-act,#8fa6ff); }
 .ver-todo:focus-visible { outline:2px solid var(--c-act,#8fa6ff); outline-offset:3px; }
 html:not([data-tres]) .ver-todo { display:none; } /* sin 3D no hay ∞ que mostrar */
-@media (max-width:860px) { .ver-todo { min-height:32px; padding:0 10px; gap:6px; font-size:.625rem; margin:0 0 4px; } .ver-todo svg { width:15px; height:15px; } }
+@media (max-width:860px) { .ver-todo { min-height:32px; padding:0 10px; gap:6px; font-size:.6875rem; margin:0 0 4px; } .ver-todo svg { width:15px; height:15px; } }
 @media (max-width:860px) and (any-pointer:coarse) { .ver-todo { min-height:40px; } }
 @media print { .ver-todo { display:none!important; } }
