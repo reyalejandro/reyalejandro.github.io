@@ -38,11 +38,12 @@ try {
     const medio = tramoCurva(k).getPoint(.5), pieza = new THREE.Group(); pieza.position.copy(medio); pieza.userData = { medio, vis: 1 };
     const tubo = new THREE.TubeGeometry(tramoCurva(k), 56, .36, 32, false); tubo.translate(-medio.x, -medio.y, -medio.z);
     // Cromo propio por pieza: en el ciclo cada una se desvanece por separado y la activa toma el color de su etapa
-    const cromoP = cromo.clone(); cromoP.transparent = true; pieza.userData.cromo = cromoP;
+    const cromoP = cromo.clone(); pieza.userData.cromo = cromoP; // opaco salvo mientras se desvanece (ver paso)
     pieza.add(new THREE.Mesh(tubo, cromoP));
     const geo = new THREE.TubeGeometry(tramoCurva(k), 60, .42, 24, false); geo.translate(-medio.x, -medio.y, -medio.z);
     // Poca emisión: con el mapeo ACES un color muy emisivo se lava a blanco.
-    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: .35, metalness: .2, roughness: .25, transparent: true, opacity: 0 }));
+    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: .35, metalness: .2, roughness: .25, transparent: true, opacity: 0, depthWrite: false }));
+    // depthWrite false: la funda invisible (portada) escribía profundidad y tapaba el cromo de su pieza (bug del ∞ cortado)
     m.userData.total = geo.index.count; pieza.add(m); grupo.add(pieza); piezas.push(pieza); return m;
   });
   // Punto u (0–1) del tramo k tal como se ve hoy: con la pieza corrida y escalada (en coordenadas del grupo)
@@ -277,6 +278,7 @@ try {
       pz.userData.vis = vis; pz.visible = vis > .01;
       // En el ciclo el cromo toma el color de su etapa (sin negro): el ∞ es el espectro de las ocho
       const cromoP = pz.userData.cromo; tono.setHex(ESPECTRO[i]);
+      const traslucido = vis < .999; if (cromoP.transparent !== traslucido) { cromoP.transparent = traslucido; cromoP.needsUpdate = true; }
       cromoP.opacity = vis; cromoP.color.lerpColors(blanco, tono, VUELO.tinte * cur.park);
       cromoP.emissive.copy(tono).multiplyScalar((i === activa ? .42 : .12) * cur.park);
     });
@@ -306,7 +308,7 @@ try {
     tramos.forEach((m, i) => {
       const si = i === activa, op = mezclar(m.material.opacity, cur.park * (si ? .8 : .45) * piezas[i].userData.vis, k);
       if (Math.abs(op - m.material.opacity) > 1e-4) cambio = true;
-      m.material.opacity = op;
+      m.material.opacity = op; m.visible = op > .004;
       m.material.emissiveIntensity = si ? .22 + 1.2 * (1 - suave(rayo)) : .08;
       const n = si ? Math.max(6, Math.floor(m.userData.total * suave(rayo) / 6) * 6) : m.userData.total;
       m.geometry.setDrawRange(0, n);
