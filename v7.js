@@ -1,6 +1,12 @@
 // v7 «Cromo vivo» (sobre la v6 «Cromo»). Comportamiento de la página: idioma, sonido, movimiento, entradas, prompts del catálogo y retoques.
 const raiz = document.documentElement;
 raiz.dataset.vivo = '';
+// Pedido del dueño: al cargar o recargar, la página arranca siempre arriba de todo. El navegador no restaura el scroll y
+// un #ancla en la dirección no la hace saltar; «instant» porque el html tiene scroll-behavior:smooth.
+history.scrollRestoration = 'manual';
+if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+const arriba = () => scrollTo({ top: 0, left: 0, behavior: 'instant' });
+arriba(); addEventListener('load', arriba);
 const sistemaQuieto = matchMedia('(prefers-reduced-motion: reduce)');
 const quieto = () => sistemaQuieto.matches || raiz.dataset.movimiento === 'off';
 const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -234,8 +240,14 @@ requestAnimationFrame(() => requestAnimationFrame(() => { if (quieto()) titulos.
   const marcar = a => { enlaces.forEach(x => x === a ? x.setAttribute('aria-current', 'location') : x.removeAttribute('aria-current')); if (a) { indicador.style.width = a.offsetWidth + 'px'; indicador.style.transform = `translateX(${a.offsetLeft}px)`; } };
   const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) marcar(enlaces.find(a => a.hash === '#' + e.target.id)); }), { rootMargin: '-45% 0px -50% 0px' });
   enlaces.forEach(a => { const s = $(a.hash); if (s) io.observe(s); });
+  // Pedido del dueño: el dock tapaba textos. En la primera pantalla no aparece (tapaba el final de la portada) y al bajar
+  // se esconde; vuelve al subir o al llegar al final, donde el pie le deja lugar.
   let ultimo = scrollY;
-  addEventListener('scroll', () => { const y = scrollY; nav.toggleAttribute('data-oculto', y > 400 && y > ultimo); ultimo = y; }, { passive: true });
+  const ubicar = () => {
+    const y = scrollY, alFinal = y + innerHeight >= document.documentElement.scrollHeight - 48;
+    nav.toggleAttribute('data-oculto', !alFinal && (y < innerHeight * .5 || y > ultimo)); ultimo = y;
+  };
+  addEventListener('scroll', ubicar, { passive: true }); ubicar();
 })();
 
 
@@ -469,13 +481,14 @@ const deHex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
 })();
 
 // ——— Íconos junto a cada herramienta nombrada en las etapas del ciclo (se rehace después de cada cambio de idioma) ———
-const ICONOS = { 'GitHub Actions': 'i-githubactions', 'Google Cloud': 'i-googlecloud', 'Claude Code': 'i-claude', 'Mercado Pago': 'i-mercadopago', 'Azure DevOps': 'i-ciclo', 'PostgreSQL': 'i-postgresql', 'TypeScript': 'i-typescript', 'Kubernetes': 'i-kubernetes', 'Playwright': 'i-probeta', 'SonarQube': 'i-sonarqubeserver', 'Terraform': 'i-terraform', 'Dynatrace': 'i-dynatrace', 'Selenium': 'i-selenium', 'Cucumber': 'i-cucumber', 'CyberArk': 'i-escudo', 'Postman': 'i-postman', 'Ansible': 'i-ansible', 'Jenkins': 'i-jenkins', 'Node.js': 'i-nodedotjs', 'Medusa': 'i-medusa', 'Docker': 'i-docker', 'Sentry': 'i-sentry', 'JMeter': 'i-apachejmeter', 'Gradle': 'i-gradle', 'Maven': 'i-apachemaven', 'Astro': 'i-astro', 'JUnit': 'i-junit5', 'Codex': 'i-chip', 'Jira': 'i-jira', 'Xray': 'i-jira', 'AWS': 'i-nube', 'n8n': 'i-n8n', 'Git': 'i-git' };
-const patronIconos = new RegExp(`(?<![\\w.])(${Object.keys(ICONOS).map(k => k.replace(/[.]/g, '\\.')).join('|')})(?![\\w])`, 'g');
+// La coma o el paréntesis que sigue al nombre va dentro del mismo bloque sin corte: en el celular quedaban solos al inicio de la línea.
+const ICONOS = { 'GitHub Actions': 'i-githubactions', 'Google Cloud': 'i-googlecloud', 'Mercado Pago': 'i-mercadopago', 'Azure DevOps': 'i-ciclo', 'PostgreSQL': 'i-postgresql', 'TypeScript': 'i-typescript', 'Kubernetes': 'i-kubernetes', 'Playwright': 'i-probeta', 'SonarQube': 'i-sonarqubeserver', 'Terraform': 'i-terraform', 'Dynatrace': 'i-dynatrace', 'Selenium': 'i-selenium', 'Cucumber': 'i-cucumber', 'CyberArk': 'i-escudo', 'Postman': 'i-postman', 'Ansible': 'i-ansible', 'Jenkins': 'i-jenkins', 'Node.js': 'i-nodedotjs', 'Medusa': 'i-medusa', 'Docker': 'i-docker', 'Sentry': 'i-sentry', 'JMeter': 'i-apachejmeter', 'Gradle': 'i-gradle', 'Maven': 'i-apachemaven', 'Astro': 'i-astro', 'JUnit': 'i-junit5', 'Jira': 'i-jira', 'Xray': 'i-jira', 'AWS': 'i-nube', 'n8n': 'i-n8n', 'Git': 'i-git' };
+const patronIconos = new RegExp(`(?<![\\w.])(${Object.keys(ICONOS).map(k => k.replace(/[.]/g, '\\.')).join('|')})(?![\\w])([,.;:)]*)`, 'g');
 function iconizar() {
   $$('.etapa-datos dd').forEach(li => {
     if (li.querySelector('.herr-ico')) return;
     const texto = li.textContent; if (!patronIconos.test(texto)) return; patronIconos.lastIndex = 0;
-    li.innerHTML = texto.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])).replace(patronIconos, (m) => `<span class="herr-ico"><svg aria-hidden="true"><use href="#${ICONOS[m]}"/></svg>${m}</span>`);
+    li.innerHTML = texto.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])).replace(patronIconos, (_, m, signo) => `<span class="herr-ico"><svg aria-hidden="true"><use href="#${ICONOS[m]}"/></svg>${m}${signo}</span>`);
   });
 }
 document.addEventListener('idioma', iconizar);
@@ -1004,6 +1017,19 @@ const iconoPestana = (() => {
 })();
 
 // ——— PDF flotante: aparece después de la portada (en el celular desde el comienzo), se esconde en el ciclo fijo y en el contacto (ya tiene el suyo) y su anillo marca cuánto se leyó ———
+// ——— Botón para volver arriba: aparece después de la primera pantalla; con movimiento reducido salta sin animar ———
+(function subir() {
+  const bot = $('[data-subir]'); if (!bot) return;
+  let pedido = false;
+  // Dentro del Ciclo fijo no aparece: en el celular quedaba encima del espectro (etapa 08)
+  const ciclo = $('[data-trayectoria]');
+  const enCiclo = () => { if (!ciclo) return false; const r = ciclo.getBoundingClientRect(); return r.top <= 1 && r.bottom >= innerHeight - 1; };
+  const ver = () => { pedido = false; bot.toggleAttribute('data-visible', scrollY > innerHeight * .9 && !enCiclo()); };
+  addEventListener('scroll', () => { if (!pedido) { pedido = true; requestAnimationFrame(ver); } }, { passive: true });
+  bot.addEventListener('click', () => { scrollTo({ top: 0, behavior: quieto() ? 'instant' : 'smooth' }); sonar('click', { tono: 1.4, vol: .2 }); });
+  ver();
+})();
+
 (function pdfFlotante() {
   const caja = $('[data-pdf-flotante]'); if (!caja) return;
   const contacto = $('#contacto'); let pedido = false;
@@ -1075,47 +1101,77 @@ const iconoPestana = (() => {
   }, { threshold: .35 }).observe($('[data-credenciales]'));
 })();
 
-// ——— Proyecto en slides horizontales (E020). La sección queda fija y el scroll pasa de una slide a la otra de izquierda a
-// derecha. Lo que entra llega girando en espiral desde el fondo (receta «espiral por offset-path» de motionsites, en versión
-// con transform) y lo que sale se aleja achicándose (zoom out), escalonado: primero el título, después el texto, al final el
-// gráfico. Cada slide se queda quieta un rato antes de cambiar. Sólo con pantalla grande y movimiento; si no, todo apilado. ———
+// ——— Proyecto en slides horizontales (E020). La sección queda fija y pasa de una slide a la otra de izquierda a derecha.
+// Pedido del dueño: «de una rueda sola quiero que se haga toda la animación de un slide a otro» (antes el cambio seguía al
+// scroll y podía quedar a mitad, con todo borroso). Ahora el scroll sólo elige la slide; el pase dura TRANSICION ms por
+// tiempo, completo. Lo que entra llega girando en espiral desde el fondo (motionsites «espiral», en transform) y lo que sale
+// se aleja achicándose, escalonado: título, texto, gráfico. Sólo con pantalla grande y movimiento; si no, todo apilado. ———
 (function proyectoSlides() {
   const sec = $('[data-proyecto]'); if (!sec) return;
   const pista = $('[data-pista]', sec), slides = $$('[data-slide]', sec), numero = $('[data-ph-n]', sec), barra = $('.ph-barra', sec);
   const SEL = ['.resultado', '.escenario-texto > p:not(.resultado)', '.escenario-texto .herramientas', '.celular-figura', '.arq', '.arq-texto > *', '.caso > div > *', '.caso figure'];
   const piezas = slides.map(s => $$(SEL.join(','), s));
   piezas.forEach(lista => lista.forEach((el, j) => { el.dataset.ph = j; }));
-  let activo = false, pedido = false, ultimoN = -1;
+  const total = slides.length - 1, TRANSICION = 1250;
+  let activo = false, pedido = false, meta = 0, pos = 0, desde = 0, t0 = 0, animando = false;
   const puede = () => innerWidth >= 900 && innerHeight >= 620 && !quieto();
-  const sstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
-  const limpiar = () => { piezas.flat().forEach(el => { el.style.transform = el.style.opacity = el.style.filter = ''; }); pista.style.transform = ''; };
+  const curva = t => t < .5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2; // entra y sale suave
+  const limpiar = () => { piezas.flat().forEach(el => { el.style.transform = el.style.opacity = ''; }); pista.style.transform = ''; };
+  const recorrido = () => Math.max(1, sec.offsetHeight - innerHeight);
+  const inicio = () => sec.getBoundingClientRect().top + scrollY;
+  const lugar = i => inicio() + recorrido() * i / total;
+  const fija = () => { const r = sec.getBoundingClientRect(); return r.top <= 1 && r.bottom >= innerHeight - 1; };
   function medir() { const ya = puede(); if (ya !== activo) { activo = ya; sec.toggleAttribute('data-ph-activo', ya); if (!ya) limpiar(); } pedir(); }
-  function pintar() {
-    pedido = false; if (!activo) return;
-    const r = sec.getBoundingClientRect(), p = Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - innerHeight)));
-    const total = slides.length - 1, s = p * total, base = Math.min(total - 1, Math.floor(s));
-    const pos = s >= total ? total : base + sstep(.28, .72, s - base); // quieta en los extremos de cada tramo, cambio en el medio
+  // Cada pieza según d = pos − i (0 = en su lugar; −1 = todavía por entrar; +1 = ya salió)
+  function dibujar() {
     pista.style.transform = `translate3d(${(-pos * 100 / slides.length).toFixed(3)}%,0,0)`;
-    barra.style.setProperty('--ph-p', p.toFixed(4));
-    const n = Math.round(pos); if (n !== ultimoN) { ultimoN = n; numero.textContent = String(n + 1).padStart(2, '0'); if (r.top < 0 && r.bottom > innerHeight) tic(1.1 + n * .2); }
     slides.forEach((sl, i) => {
       const d = pos - i, lista = piezas[i], m = lista.length;
       lista.forEach((el, j) => {
         // v = cuánto está en su lugar (1 = quieto). Entra en orden de lectura y sale al revés.
-        const k = d < 0 ? j : m - 1 - j, v = Math.min(1, Math.max(0, (1 - Math.abs(d)) * 2 - k * .14)), w = 1 - v;
-        if (w < .002) { if (el.style.transform) { el.style.transform = el.style.opacity = el.style.filter = ''; } return; }
+        const k = d < 0 ? j : m - 1 - j, v = Math.min(1, Math.max(0, (1 - Math.abs(d)) * 1.6 - k * .1)), w = 1 - v;
+        if (w < .002) { if (el.style.transform) { el.style.transform = el.style.opacity = ''; } return; }
         if (d < 0) {
-          // Espiral: gira 240° mientras se acerca al centro, y crece desde .3
-          const th = w * 4.2 + j * .7, rad = w * 260;
-          el.style.transform = `translate3d(${(Math.cos(th) * rad).toFixed(1)}px,${(Math.sin(th) * rad * .6).toFixed(1)}px,0) rotate(${(-w * 38).toFixed(2)}deg) scale(${(.3 + .7 * v).toFixed(3)})`;
+          // Espiral: da casi una vuelta entera (300°) mientras se acerca al centro desde lejos, y crece desde .25
+          const th = w * 5.2 + j * .7, rad = w * 380;
+          el.style.transform = `translate3d(${(Math.cos(th) * rad).toFixed(1)}px,${(Math.sin(th) * rad * .62).toFixed(1)}px,0) rotate(${(-w * 300).toFixed(1)}deg) scale(${(.25 + .75 * v).toFixed(3)})`;
         } else {
           // Zoom out: se aleja achicándose y se va un poco hacia arriba
-          el.style.transform = `translate3d(0,${(-w * 40).toFixed(1)}px,0) scale(${(1 - w * .6).toFixed(3)})`;
+          el.style.transform = `translate3d(0,${(-w * 60).toFixed(1)}px,0) scale(${(1 - w * .7).toFixed(3)})`;
         }
-        el.style.opacity = (v * v).toFixed(3); el.style.filter = w > .02 ? `blur(${(w * 9).toFixed(1)}px)` : '';
+        // Visible durante casi todo el giro (antes la opacidad v² y el desenfoque lo escondían y trababan el cuadro)
+        el.style.opacity = Math.min(1, v * 4 + (d < 0 ? .15 : 0)).toFixed(3);
       });
     });
   }
+  const animar = ahora => {
+    const t = Math.min(1, (ahora - t0) / TRANSICION); pos = desde + (meta - desde) * curva(t); dibujar();
+    if (t < 1) requestAnimationFrame(animar); else animando = false;
+  };
+  function pintar() {
+    pedido = false; if (!activo) return;
+    const r = sec.getBoundingClientRect(), p = Math.min(1, Math.max(0, -r.top / recorrido()));
+    barra.style.setProperty('--ph-p', p.toFixed(4));
+    const n = Math.round(p * total);
+    if (n !== meta) {
+      meta = n; numero.textContent = String(n + 1).padStart(2, '0'); if (fija()) tic(1.1 + n * .2);
+      desde = pos; t0 = performance.now(); if (!animando) { animando = true; requestAnimationFrame(animar); }
+    } else if (!animando) dibujar();
+  }
+  // Rueda: dentro de la sección fija, un paso de rueda = una slide entera. Mientras dura el pase no se encadena otro.
+  // En la primera y la última slide la rueda sale de la sección. En el trackpad se juntan los deltas.
+  let acumulado = 0, bloqueo = 0;
+  addEventListener('wheel', e => {
+    if (!activo || e.ctrlKey || !fija() || Math.abs(e.deltaX) > Math.abs(e.deltaY)) { acumulado = 0; return; }
+    const destino = meta + Math.sign(e.deltaY);
+    if (destino < 0) { e.preventDefault(); scrollTo({ top: inicio() - 2, behavior: 'instant' }); return; }
+    if (destino > total) { e.preventDefault(); scrollTo({ top: inicio() + recorrido() + 2, behavior: 'instant' }); return; }
+    e.preventDefault();
+    const ahora = performance.now(); acumulado += Math.abs(e.deltaY);
+    if (ahora < bloqueo || acumulado < 40) return;
+    acumulado = 0; bloqueo = ahora + TRANSICION * .8;
+    scrollTo({ top: lugar(destino), behavior: 'instant' });
+  }, { passive: false });
   const pedir = () => { if (!pedido) { pedido = true; requestAnimationFrame(pintar); } };
   addEventListener('scroll', pedir, { passive: true }); addEventListener('resize', medir); document.addEventListener('movimiento', medir);
   medir();

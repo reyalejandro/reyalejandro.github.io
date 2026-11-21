@@ -38,6 +38,7 @@ if (cajas.length) try {
     const mundo = new THREE.Group(); scene.add(mundo);
     const suelo = new THREE.GridHelper(16, 16, 0x3a4a9a, 0x1b2350); suelo.material.transparent = true; suelo.material.opacity = .35; mundo.add(suelo);
     const escena = armar({ mundo, caja });
+    if (escena.fov) camera.fov = escena.fov; // la vista del pipeline, en primera persona, pide un ángulo más abierto
     const etiquetas = [...caja.querySelectorAll('[data-ancla]')].map(el => ({ el, ancla: escena.anclas[el.dataset.ancla] })).filter(e => e.ancla);
     let yaw = escena.yaw ?? -.62, pitch = escena.pitch ?? .62, metaYaw = yaw, extra = 0, mx = 0, my = 0, radio = escena.radio ?? 11;
     let sucio = true, enVista = false, corriendo = false, arr = null, antes = performance.now();
@@ -218,33 +219,75 @@ if (cajas.length) try {
     return escena;
   });
 
-  // ——— Pipeline de Tsoft: cinta que corre, cuatro estaciones y paquetes que salen «listos» de la estación de pruebas ———
+  // ——— Pipeline de Tsoft (pedido del dueño, boceto «rueda de mouse para abajo = se mueve la cinta»): vista desde atrás del
+  // paquete, que va en primer plano sobre la cinta. Al bajar con la rueda la cinta avanza y el paquete pasa por debajo de
+  // cada gate (01 Código, 02 Build, 03 Pruebas, 04 Nube), con su cartel arriba. Al cruzar uno, su cortina de luz destella,
+  // el cartel se enciende y el paquete cambia: crudo → compilado → probado (verde) → en la nube (azul). ———
   const pipe = document.querySelector('[data-escena="pipeline"]');
-  if (pipe) motor(pipe, ({ mundo }) => {
+  if (pipe) motor(pipe, ({ mundo, caja }) => {
     const anclas = {};
-    const rayas = lienzoTex(256, 32, (c, w, h) => { c.fillStyle = '#171c3a'; c.fillRect(0, 0, w, h); c.fillStyle = '#2b3566'; for (let x = 0; x < w; x += 32) c.fillRect(x, 0, 12, h); });
-    rayas.wrapS = THREE.RepeatWrapping; rayas.repeat.set(6, 1);
-    const cinta = new THREE.Mesh(caja3(10.4, .22, 1.1, .08), [M.cuerpo(), M.cuerpo(), new THREE.MeshStandardMaterial({ map: rayas, roughness: .6 }), M.cuerpo(), M.cuerpo(), M.cuerpo()]); cinta.position.y = .11; mundo.add(cinta);
-    const XS = [-3.6, -1.2, 1.2, 3.6], CLAVES = ['codigo', 'build', 'pruebas', 'nube'], luces = [];
-    XS.forEach((x, k) => {
-      for (const z of [-.75, .75]) { const pilar = new THREE.Mesh(caja3(.16, 1.5, .16, .04), M.cuerpo()); pilar.position.set(x, .75, z); mundo.add(pilar); }
-      const viga = new THREE.Mesh(caja3(.3, .22, 1.8, .05), k === 3 ? M.azul() : M.cromo()); viga.position.set(x, 1.55, 0); mundo.add(viga);
-      const luz = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 1.2), new THREE.MeshBasicMaterial({ color: 0x8fa6ff, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false, toneMapped: false }));
-      luz.rotation.y = Math.PI / 2; luz.position.set(x, .85, 0); mundo.add(luz); luces.push(luz);
-      anclas[CLAVES[k]] = new THREE.Vector3(x, 2.05, 0);
+    mundo.children[0].visible = false; // la grilla del motor no se mueve: esta escena trae la suya, que corre con la cinta
+    const CLAVES = ['codigo', 'build', 'pruebas', 'nube'], GAP = 4.2, D0 = 3.4, LARGO = D0 + GAP * 3 + 6;
+    const viaje = D0 + GAP * 3 + 1.6; // lo que avanza la cinta de punta a punta (el último gate queda atrás del paquete)
+    const marco = M.cuerpo();
+    // Bastidor fijo a los costados y, adentro, todo lo que corre: tablillas, grilla del piso y gates
+    for (const x of [-.72, .72]) { const riel = new THREE.Mesh(caja3(.12, .3, LARGO + 6, .04), marco); riel.position.set(x, .15, -LARGO / 2 + 3); mundo.add(riel); }
+    const corre = new THREE.Group(); mundo.add(corre);
+    const tablaGeo = caja3(1.32, .08, .32, .03), tablaMat = new THREE.MeshStandardMaterial({ color: 0x232c5e, roughness: .55, metalness: .2 });
+    for (let z = 3; z > -LARGO - viaje; z -= .42) { const t = new THREE.Mesh(tablaGeo, tablaMat); t.position.set(0, .26, z); corre.add(t); }
+    const piso = new THREE.GridHelper(48, 48, 0x3a4a9a, 0x1b2350); piso.material.transparent = true; piso.material.opacity = .3; piso.position.z = -20; corre.add(piso);
+    const COLORES = [0x9b7bff, 0x4d7cff, 0x2ee6a8, 0x2d5bff];
+    const gates = CLAVES.map((clave, k) => {
+      const g = new THREE.Group(); g.position.z = -(D0 + GAP * k); corre.add(g);
+      for (const x of [-.86, .86]) { const pilar = new THREE.Mesh(caja3(.16, 1.9, .16, .04), M.cuerpo()); pilar.position.set(x, .95, 0); g.add(pilar); }
+      const viga = new THREE.Mesh(caja3(2.1, .26, .3, .06), k === 3 ? M.azul() : M.cromo()); viga.position.y = 1.95; g.add(viga);
+      const cortina = new THREE.Mesh(new THREE.PlaneGeometry(1.56, 1.6), new THREE.MeshBasicMaterial({ color: COLORES[k], transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false, toneMapped: false }));
+      cortina.position.y = .98; g.add(cortina);
+      const tira = new THREE.Mesh(new THREE.BoxGeometry(1.7, .05, .05), M.led(COLORES[k])); tira.position.set(0, 1.8, .16); g.add(tira);
+      const ancla = new THREE.Object3D(); ancla.position.y = 2.42; g.add(ancla); anclas[clave] = ancla;
+      return { g, cortina, tira };
     });
-    const crudo = new THREE.MeshStandardMaterial({ color: 0x0d1131, emissive: 0x8fa6ff, emissiveIntensity: .25, roughness: .4 });
-    const listo = new THREE.MeshPhysicalMaterial({ color: 0xffffff, emissive: 0x2d5bff, emissiveIntensity: .35, roughness: .2, clearcoat: 1 });
-    const paquetes = [0, 1, 2, 3].map(() => { const p = new THREE.Mesh(caja3(.42, .38, .42, .05), crudo); p.position.y = .42; mundo.add(p); return p; });
-    let t = 0;
+    // El paquete: en primer plano, quieto respecto de la cámara (lo que se mueve es el mundo)
+    const estados = [
+      new THREE.MeshStandardMaterial({ color: 0xc9a36b, roughness: .85 }), // crudo: cartón
+      new THREE.MeshStandardMaterial({ color: 0xd8b77f, roughness: .7, emissive: 0x4d7cff, emissiveIntensity: .12 }), // compilado
+      new THREE.MeshPhysicalMaterial({ color: 0xe9fff4, roughness: .3, clearcoat: 1, emissive: 0x2ee6a8, emissiveIntensity: .35 }), // probado
+      new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: .2, clearcoat: 1, emissive: 0x2d5bff, emissiveIntensity: .45 }), // en la nube
+    ];
+    const paquete = new THREE.Group(); paquete.position.set(0, .64, 0); paquete.scale.setScalar(1.25); mundo.add(paquete);
+    const cuerpo = new THREE.Mesh(caja3(.62, .52, .62, .05), estados[0]); paquete.add(cuerpo);
+    const cinta = new THREE.Mesh(caja3(.64, .53, .12, .02), M.cinta()); paquete.add(cinta);
+    const carteles = CLAVES.map(c => caja.querySelector(`[data-ancla="${c}"]`));
+    let prog = 0, meta = 0, t = 0, estado = -1;
+    const objetivo = () => { const r = caja.getBoundingClientRect(), H = innerHeight; return Math.min(1, Math.max(0, (H * .9 - r.top) / (H * .78))); };
     const colocar = () => {
-      paquetes.forEach((p, k) => { const f = ((t * .12) + k / paquetes.length) % 1, x = -5 + f * 10; p.position.x = x; p.material = x > 1.2 ? listo : crudo; p.visible = x > -4.9 && x < 4.9; });
-      luces.forEach((l, k) => { const cerca = Math.min(...paquetes.map(p => Math.abs(p.position.x - XS[k]))); l.material.opacity = Math.max(0, .45 - cerca * .6); });
+      corre.position.z = prog * viaje;
+      let pasados = 0;
+      gates.forEach(({ g, cortina, tira }, k) => {
+        const z = g.position.z + corre.position.z; // dónde está el gate respecto del paquete (0 = encima)
+        if (z > 0) pasados = k + 1;
+        cortina.material.opacity = Math.max(0, .55 - Math.abs(z) * .5);
+        tira.scale.x = z > 0 ? 1 : .35 + .65 * Math.max(0, 1 - Math.abs(z) / GAP);
+        const el = carteles[k]; if (!el) return;
+        // Sólo el cartel del próximo gate (los lejanos se apilaban en el horizonte); se va al pasar por encima del paquete
+        const ver = z > -GAP * 1.05 && z < .6; el.style.opacity = ver ? Math.min(1, (.6 - z) * 2, (z + GAP * 1.05) * 1.2).toFixed(2) : '0';
+        el.toggleAttribute('data-activo', z > -GAP * .55 && z < .9);
+      });
+      const nuevo = Math.max(0, pasados - 1);
+      if (nuevo !== estado) { estado = nuevo; cuerpo.material = estados[pasados ? nuevo : 0]; }
+      paquete.position.y = .7 + Math.sin(t * 2.2) * .015; paquete.rotation.y = Math.sin(t * .9) * .05;
     };
-    colocar();
+    meta = prog = objetivo(); colocar();
     return {
-      anclas, radio: 8.2, yaw: -.5, pitch: .46, mira: new THREE.Vector3(0, .7, 0),
-      tic(ahora, dt, q) { if (q) return false; t += dt; rayas.offset.x -= dt * .55; colocar(); return true; },
+      // Cámara detrás y un poco arriba del paquete, mirando a lo largo de la cinta
+      anclas, fov: 48, radio: 5.6, yaw: 0, pitch: .42, mira: new THREE.Vector3(0, .8, -2.3),
+      tic(ahora, dt, q) {
+        meta = objetivo();
+        const antes = prog; prog = q ? meta : prog + (meta - prog) * (1 - Math.pow(.86, dt * 60));
+        if (!q) t += dt;
+        colocar();
+        return !q || Math.abs(prog - antes) > 1e-5;
+      },
     };
   });
 } catch (e) { console.warn('Escenas 3D no disponibles:', e); }
