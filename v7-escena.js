@@ -27,16 +27,24 @@ try {
     getPoint(u, v = new THREE.Vector3()) { const a = (this.desde + (this.hasta - this.desde) * u) * Math.PI * 2, d = 1 + Math.sin(a) ** 2; return v.set(2.9 * Math.cos(a) / d, 2.9 * Math.sin(a) * Math.cos(a) / d, .55 * Math.sin(a)); }
   }
   const curva = new Lemniscata(), grupo = new THREE.Group(); scene.add(grupo);
-  grupo.add(new THREE.Mesh(new THREE.TubeGeometry(curva, 420, .36, 32, true), new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 1, roughness: .06, clearcoat: 1, clearcoatRoughness: .04, envMapIntensity: 2 })));
+  const cromo = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 1, roughness: .06, clearcoat: 1, clearcoatRoughness: .04, envMapIntensity: 2 });
   // Ocho tramos: lóbulo izquierdo = desarrollo (planificar, código, build, pruebas), derecho = operación.
   const INICIO = .25, centro = k => (INICIO + (k + .5) / 8) % 1;
   const tramoCurva = k => new Lemniscata(INICIO + k / 8, INICIO + (k + 1) / 8);
-  const tramos = ESPECTRO.map((c, k) => {
-    const geo = new THREE.TubeGeometry(tramoCurva(k), 60, .42, 24, false);
+  // El tubo son ocho piezas (pedido del dueño, boceto rojo): en el ciclo la pieza de la etapa activa se desprende del bucle,
+  // sube y crece, como una vista explosionada (E250). Cada pieza lleva adentro su tramo de color; las geometrías están
+  // centradas en el medio del tramo para que la pieza escale sobre sí misma.
+  const piezas = [], tramos = ESPECTRO.map((c, k) => {
+    const medio = tramoCurva(k).getPoint(.5), pieza = new THREE.Group(); pieza.position.copy(medio); pieza.userData = { medio, alza: 0 };
+    const tubo = new THREE.TubeGeometry(tramoCurva(k), 56, .36, 32, false); tubo.translate(-medio.x, -medio.y, -medio.z);
+    pieza.add(new THREE.Mesh(tubo, cromo));
+    const geo = new THREE.TubeGeometry(tramoCurva(k), 60, .42, 24, false); geo.translate(-medio.x, -medio.y, -medio.z);
     // Poca emisión: con el mapeo ACES un color muy emisivo se lava a blanco.
     const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: .35, metalness: .2, roughness: .25, transparent: true, opacity: 0 }));
-    m.userData.total = geo.index.count; grupo.add(m); return m;
+    m.userData.total = geo.index.count; pieza.add(m); grupo.add(pieza); piezas.push(pieza); return m;
   });
+  // Punto u (0–1) del tramo k tal como se ve hoy: con la pieza corrida y escalada (en coordenadas del grupo)
+  const puntoPieza = (k, u, salida) => { const pz = piezas[k]; return tramoCurva(k).getPoint(u, salida).sub(pz.userData.medio).multiplyScalar(pz.scale.x).add(pz.position); };
   const cuentaGeo = new THREE.SphereGeometry(.5, 32, 22);
   // Sin iridiscencia: era lo más caro del sombreado y apenas se notaba.
   const cuentas = ESPECTRO.map(() => {
@@ -82,10 +90,10 @@ try {
     // Zona libre: entre el texto de la etapa (arriba) y el espectro (abajo), a todo el ancho
     const panel = document.querySelector('.tray-pasos')?.getBoundingClientRect(), espectro = document.querySelector('.espectro')?.getBoundingClientRect();
     const minX = 16, maxX = innerWidth - 16, minY = (panel ? panel.bottom : 0) + 6, maxY = (espectro ? espectro.top : innerHeight) - 10;
-    const tramo = tramoCurva(activa), vivo = !quieto();
+    const vivo = !quieto();
     // Con el zoom, el tramo activo ocupa el centro de la zona: las etiquetas lo rodean en un óvalo ancho (la zona es baja y
     // ancha), repartidas parejo y escalonadas. Cada haz sale del punto del tramo más cercano a su etiqueta.
-    const muestras = []; for (let m = 0; m <= 12; m++) { const q = { x: 0, y: 0 }; pantalla(tramo.getPoint(m / 12, pRayo), q); muestras.push(q); }
+    const muestras = []; for (let m = 0; m <= 12; m++) { const q = { x: 0, y: 0 }; pantalla(puntoPieza(activa, m / 12, pRayo), q); muestras.push(q); }
     const xs = muestras.map(q => q.x), ys = muestras.map(q => q.y);
     c2.x = (Math.min(...xs) + Math.max(...xs)) / 2; c2.y = (Math.min(...ys) + Math.max(...ys)) / 2;
     const n = etiquetas.length, alto = Math.max(60, maxY - minY);
@@ -107,9 +115,10 @@ try {
         const th = -Math.PI / 2 + (k + .5) / n * Math.PI * 2, cx = Math.cos(th), cy = Math.sin(th);
         e.x = c2.x + cx * (rx + extra) - e.w / 2; e.y = c2.y + cy * (ry + extra * .25) - e.h / 2;
       }
+      // Cada haz sale de un punto distinto de la pieza: el de su columna más cercano a la etiqueta, sin repetir
       let mejor = muestras[0], dmin = Infinity;
-      for (const q of muestras) { const d = Math.hypot(q.x - (e.x + e.w / 2), q.y - (e.y + e.h / 2)); if (d < dmin) { dmin = d; mejor = q; } }
-      e.ax = mejor.x; e.ay = mejor.y;
+      for (const q of muestras) { if (q.usado) continue; const d = Math.hypot(q.x - (e.x + e.w / 2), q.y - (e.y + e.h / 2)); if (d < dmin) { dmin = d; mejor = q; } }
+      mejor.usado = etiquetas.length <= muestras.length; e.ax = mejor.x; e.ay = mejor.y;
     });
     // Se separan las que se pisan (unas pasadas alcanzan) y se mantienen dentro de la zona libre
     for (let pasada = 0; pasada < 10; pasada++) {
@@ -181,7 +190,7 @@ try {
   };
   medir(); addEventListener('resize', medir);
 
-  const anchoPx = (tipo, r) => tipo === 'portada' ? (innerWidth < 860 ? r.width * .92 : Math.min(r.width * .52, r.height * 1.25, 820)) : innerWidth > 860 ? Math.max(240, Math.min(r.width * .46, r.height * 1.25, (innerWidth - 2 * (16 + 300) - 70) / 1.5)) : Math.min(r.width * .9, r.height * 1.8);
+  const anchoPx = (tipo, r) => tipo === 'portada' ? (innerWidth < 860 ? r.width * .92 : Math.min(r.width * .94, r.height * 1.52, 820)) : innerWidth > 860 ? Math.max(240, Math.min(r.width * .46, r.height * 1.25, innerWidth - 2 * (16 + 300) - 70)) : Math.min(r.width * .9, r.height * 1.8);
   const progresoTray = () => { if (!tray) return 0; const r = tray.getBoundingClientRect(); return Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - innerHeight))); };
   function objetivo() {
     const H = innerHeight, u = unidad();
@@ -200,14 +209,13 @@ try {
   const ahora0 = objetivo(), cur = { x: ahora0.x, y: ahora0.y, s: ahora0.s, o: ahora0.o, park: ahora0.w.trayectoria, ry: 0, rx: .2 };
   let antes = performance.now(), dibujado = 0, corriendo = false;
   const v = new THREE.Vector3(), b = new THREE.Vector3();
-  // Zoom por etapa (pedido del dueño): en el ciclo la cámara se acerca al tramo activo y lo centra en la zona de abajo.
-  // «foco» es el punto de la curva que se centra; se interpola, así al cambiar de etapa el encuadre viaja por el bucle.
-  const ZOOM = () => innerWidth > 860 ? 1.5 : 1.3;
-  const foco = new THREE.Vector3(), focoMeta = new THREE.Vector3(), corrido = new THREE.Vector3();
+  // Alza por etapa (pedido del dueño, boceto rojo): la pieza activa sube, se acerca a cámara, se corre un poco hacia su lado
+  // y crece; las demás vuelven a su lugar. El ∞ entero queda abajo de la zona para dejarle aire arriba.
+  const ALZA = { arriba: 2.3, frente: .35, costado: .25, crece: .55 };
+  let alzaArriba = ALZA.arriba;
   const textoCiclo = document.querySelector('.tray-pasos'), espectroCiclo = document.querySelector('.espectro');
   // Ancho de una columna de etiquetas: la etiqueta más ancha de la etapa, su escalonado y el aire hasta el tubo
   const columnaEtq = () => (etiquetas.length ? Math.max(...etiquetas.map(e => e.w)) : 220) + 30 + 34;
-  curva.getPoint(centro(0), foco);
   const suave = x => 1 - (1 - x) ** 3;
 
   function paso(dt) {
@@ -222,21 +230,27 @@ try {
     const px = o.x + nx * .1 * mouse * o.w.portada, py = o.y - ny * .07 * mouse * o.w.portada;
     // Sólo se vuelve a dibujar el 3D si algo se movió: con la página quieta la GPU descansa.
     let cambio = rayo < 1 || !!arrastre || Math.abs(vel) > 1e-4 || Math.abs(incl) > 1e-4;
-    const sMeta = o.s * (1 + (ZOOM() - 1) * wt);
-    for (const [c, val] of [['x', px], ['y', py], ['s', sMeta], ['o', o.o], ['park', wt], ['ry', ry], ['rx', rx]]) { const nuevo = mezclar(cur[c], val, k); if (Math.abs(nuevo - cur[c]) > 1e-5) cambio = true; cur[c] = nuevo; }
-    curva.getPoint(centro(activa), focoMeta);
-    if (foco.distanceToSquared(focoMeta) > 1e-8) { foco.lerp(focoMeta, quieto() ? 1 : .08); cambio = true; }
+    for (const [c, val] of [['x', px], ['y', py], ['s', o.s], ['o', o.o], ['park', wt], ['ry', ry], ['rx', rx]]) { const nuevo = mezclar(cur[c], val, k); if (Math.abs(nuevo - cur[c]) > 1e-5) cambio = true; cur[c] = nuevo; }
+    // Piezas: la activa sube con su alza; el resto vuelve. Fuera del ciclo ninguna se mueve.
+    piezas.forEach((pz, i) => {
+      const meta = i === activa ? cur.park : 0, a = mezclar(pz.userData.alza, meta, quieto() ? 1 : .09);
+      if (Math.abs(a - pz.userData.alza) > 1e-4) cambio = true;
+      pz.userData.alza = a; const e = suave(a), m = pz.userData.medio;
+      pz.position.set(m.x + Math.sign(m.x || 1) * ALZA.costado * e, m.y + alzaArriba * e, m.z + ALZA.frente * e);
+      pz.scale.setScalar(1 + ALZA.crece * e);
+    });
     grupo.scale.setScalar(cur.s); grupo.rotation.set(cur.rx, cur.ry, 0);
-    // El punto enfocado (rotado y escalado) se lleva al centro del lugar; fuera del ciclo no hay corrimiento.
-    corrido.copy(foco).applyEuler(grupo.rotation).multiplyScalar(cur.s * cur.park);
-    grupo.position.set(cur.x - corrido.x, cur.y - corrido.y, 0); grupo.updateMatrixWorld();
-    // En el ciclo el ∞ entero queda entre el texto y el espectro: si al centrar el tramo se pasa, se corre lo justo.
+    grupo.position.set(cur.x, cur.y, 0); grupo.updateMatrixWorld();
+    // En el ciclo el ∞ se apoya abajo de la zona (sobre el espectro), así la pieza que sube tiene aire hasta el texto.
     if (cur.park > .05) {
       const panel = textoCiclo?.getBoundingClientRect(), pie = espectroCiclo?.getBoundingClientRect(), u = unidad(), grosor = .42 * cur.s / u;
       let arriba = Infinity, abajo = -Infinity, izq = Infinity, der = -Infinity;
       for (let m = 0; m < 24; m++) { pantalla(curva.getPoint(m / 24, v), c2); arriba = Math.min(arriba, c2.y - grosor); abajo = Math.max(abajo, c2.y + grosor); izq = Math.min(izq, c2.x - grosor); der = Math.max(der, c2.x + grosor); }
       const tope = (panel ? panel.bottom : 0) + 4, piso = (pie ? pie.top : innerHeight) - 6;
-      let dy = 0; if (abajo > piso) dy = abajo - piso; else if (arriba < tope) dy = Math.max(arriba - tope, abajo - piso);
+      const dy = abajo - piso;
+      // La pieza no sube más que el aire que queda entre el ∞ y el texto (lo que mide el tubo crecido incluido)
+      const aire = (arriba - dy) - tope - (1 + ALZA.crece) * .55 * cur.s / u;
+      alzaArriba = Math.max(.35, Math.min(ALZA.arriba, aire * u / cur.s));
       // En escritorio quedan libres las dos columnas de etiquetas, una a cada lado
       const col = enDesktop() ? columnaEtq() : 0, limIzq = 16 + col, limDer = innerWidth - 16 - col;
       let dx = 0; if (izq < limIzq && der > limDer) dx = (izq + der) / 2 - innerWidth / 2; else if (izq < limIzq) dx = izq - limIzq; else if (der > limDer) dx = der - limDer;
@@ -244,18 +258,20 @@ try {
     }
     // Espectro: todos los tramos se ven tenues con su color; el de la etapa activa sale como un rayo que lo recorre y queda encendido.
     tramos.forEach((m, i) => {
-      const si = i === activa, op = mezclar(m.material.opacity, cur.park * (si ? 1 : .5), k);
+      // La pieza que sube lleva su color a media luz, para que se siga viendo el cromo
+      const si = i === activa, op = mezclar(m.material.opacity, cur.park * (si ? .55 : .5), k);
       if (Math.abs(op - m.material.opacity) > 1e-4) cambio = true;
       m.material.opacity = op;
       m.material.emissiveIntensity = si ? .22 + 1.2 * (1 - suave(rayo)) : .1;
       const n = si ? Math.max(6, Math.floor(m.userData.total * suave(rayo) / 6) * 6) : m.userData.total;
       m.geometry.setDrawRange(0, n);
     });
-    tramoCurva(activa).getPoint(suave(rayo), v); rayoLuz.position.copy(v.applyMatrix4(grupo.matrixWorld)); rayoLuz.position.z += .8;
+    puntoPieza(activa, suave(rayo), v); rayoLuz.position.copy(v.applyMatrix4(grupo.matrixWorld)); rayoLuz.position.z += .8;
     rayoLuz.color.setHex(ESPECTRO[activa]); rayoLuz.intensity = mezclar(rayoLuz.intensity, cur.park * (14 + 46 * (1 - rayo)), .3);
     // Cuentas: en la portada quietas sobre el ∞; en el ciclo, una en el centro de cada tramo. La activa no crece: se ilumina con su color.
     cuentas.forEach((c, i) => {
-      curva.getPoint(i / 8, v); curva.getPoint(centro(i), b); c.position.copy(v.lerp(b, cur.park));
+      // En el ciclo cada cuenta va en el medio de su pieza: si la pieza sube, la cuenta sube con ella
+      curva.getPoint(i / 8, v); c.position.copy(v.lerp(b.copy(piezas[i].position), cur.park)); c.scale.setScalar(1 + .35 * suave(piezas[i].userData.alza));
       const si = cur.park > .5 && i === activa;
       tono.setHex(ESPECTRO[i]);
       c.material.color.lerpColors(azulCuenta, tono, si ? 1 : 0); c.material.emissive.lerpColors(azulBrillo, tono, si ? 1 : 0);
