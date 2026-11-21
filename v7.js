@@ -1,4 +1,4 @@
-// Comportamiento del CV: idioma, sonido, movimiento y recorridos.
+// v7 «Cromo vivo» (sobre la v6 «Cromo»). Comportamiento de la página: idioma, sonido, movimiento, entradas, prompts del catálogo y retoques.
 const raiz = document.documentElement;
 raiz.dataset.vivo = '';
 const sistemaQuieto = matchMedia('(prefers-reduced-motion: reduce)');
@@ -8,27 +8,20 @@ const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [..
 // ——— Movimiento reducido propio (E259), además del del sistema ———
 const botonMov = $('[data-movimiento]');
 try { if (localStorage.getItem('cv6-movimiento') === 'off') raiz.dataset.movimiento = 'off'; } catch {}
-const rotularMov = () => {
-  botonMov.setAttribute('aria-pressed', String(quieto()));
-  raiz.toggleAttribute('data-ciclo-lista', quieto());
-};
+const rotularMov = () => botonMov.setAttribute('aria-pressed', String(quieto()));
 botonMov.addEventListener('click', () => {
   if (raiz.dataset.movimiento === 'off') delete raiz.dataset.movimiento; else raiz.dataset.movimiento = 'off';
   try { localStorage.setItem('cv6-movimiento', raiz.dataset.movimiento || 'sistema'); } catch {}
   rotularMov(); document.dispatchEvent(new Event('movimiento'));
 });
 rotularMov();
-sistemaQuieto.addEventListener('change', () => {
-  rotularMov();
-  document.dispatchEvent(new Event('movimiento'));
-});
 
 // ——— Sonido (E316, E341, E319–E322): sprite CC0 de Kenney incrustado (anda también con file://).
 // Se activa con el primer clic o tecla, salvo que el visitante lo haya silenciado; la elección queda guardada.
 const SPRITE = { click: [0, .097], on: [.247, .395], off: [.792, .622], success: [1.564, .29], error: [2.003, .162], case: [2.315, .1] };
 const SPRITE_B64 = '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VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/7UsShg8AAAaQAAAAgAAA0gAAABFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//tSxKGDwAABpAAAACAAADSAAAAEVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/+1LEoYPAAAGkAAAAIAAANIAAAARVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/7UsShg8AAAaQAAAAgAAA0gAAABFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//tQxKIDwAABpAAAACAAADSAAAAEVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/7UsShg8AAAaQAAAAgAAA0gAAABFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV';
 const botonSonido = $('[data-sonido]'), textoSonido = $('[data-sonido-texto]');
-let audio = null, sprite = null, sonidoOn = false, encendiendo = false, ultimoTic = 0;
+let audio = null, sprite = null, sonidoOn = false, ultimoTic = 0;
 function sonar(nombre, { tono = 1, vol } = {}) {
   if (!sonidoOn || !sprite || !SPRITE[nombre]) return;
   const [inicio, dur] = SPRITE[nombre], f = audio.createBufferSource(), v = audio.createGain();
@@ -38,29 +31,27 @@ function sonar(nombre, { tono = 1, vol } = {}) {
 const tic = (tono = 1.7) => { const ahora = performance.now(); if (ahora - ultimoTic < 70) return; ultimoTic = ahora; sonar('click', { tono, vol: .1 }); };
 const rotularSonido = estado => {
   botonSonido.dataset.estado = estado; botonSonido.setAttribute('aria-pressed', String(estado === 'on'));
-  botonSonido.setAttribute('aria-label', t('Sonido', 'Sound'));
   textoSonido.textContent = estado === 'on' ? t('Silenciar', 'Mute') : estado === 'error' ? t('Reintentar sonido', 'Retry sound') : t('Activar sonido', 'Turn sound on');
 };
 const preferencia = () => { try { return localStorage.getItem('cv-sonido'); } catch { return null; } };
 const guardar = v => { try { localStorage.setItem('cv-sonido', v); } catch {} };
 async function encender(conAviso) {
-  if (encendiendo) return;
-  encendiendo = true;
   try {
     audio ??= new (window.AudioContext || window.webkitAudioContext)(); await audio.resume();
     sprite ??= await audio.decodeAudioData(Uint8Array.from(atob(SPRITE_B64), c => c.charCodeAt(0)).buffer);
     sonidoOn = true; rotularSonido('on'); if (conAviso) sonar('on');
   } catch { sonidoOn = false; rotularSonido('error'); }
-  finally { encendiendo = false; }
 }
 botonSonido.addEventListener('click', () => {
   if (sonidoOn) { sonar('off'); sonidoOn = false; guardar('off'); rotularSonido('off'); return; }
   guardar('on'); encender(true);
 });
-// Una eleccion guardada se reanuda con el primer clic de una visita nueva.
-if (preferencia() === 'on') document.addEventListener('click', e => {
-  if (!e.target.closest?.('[data-sonido]') && !sonidoOn) encender(false);
-}, { once: true, capture: true });
+const primerGesto = e => {
+  removeEventListener('pointerdown', primerGesto, true); removeEventListener('keydown', primerGesto, true);
+  if (e.target.closest?.('[data-sonido]')) return;
+  if (preferencia() !== 'off') encender(false);
+};
+addEventListener('pointerdown', primerGesto, true); addEventListener('keydown', primerGesto, true);
 document.addEventListener('click', e => {
   const a = e.target.closest('a[href], button'); if (!a || a === botonSonido || a.matches('[data-copiar], [download], [data-etapa], [data-celular-accion]')) return;
   sonar('click');
@@ -105,23 +96,12 @@ function decodificar(h) {
   const partes = $$('b', h); if (!partes.length) return;
   const finales = partes.map(b => b.textContent), total = finales.join(' ');
   h.dataset.decodificando = ''; h.setAttribute('aria-label', total);
-  const inicio = performance.now(), largo = Math.max(...finales.map(f => f.length), 1);
-  const fijar = finales.map(f => [...f].map((_, i) => 65 + i * (330 / largo) + Math.random() * 65));
+  const inicio = performance.now(), largo = finales.reduce((n, f) => n + f.length, 0), fijar = finales.map(f => [...f].map((_, i) => 160 + i * (520 / Math.max(1, largo)) * 2.2 + Math.random() * 180));
   let ultimo = 0;
-  const cortar = () => {
-    partes.forEach((b, k) => { b.textContent = finales[k]; });
-    delete h.dataset.decodificando;
-    h.removeAttribute('aria-label');
-    document.removeEventListener('idioma', cancelar);
-  };
-  const cancelar = () => {
-    delete h.dataset.decodificando;
-    h.removeAttribute('aria-label');
-  };
-  document.addEventListener('idioma', cancelar, { once: true });
+  const cortar = () => { partes.forEach((b, k) => { b.textContent = finales[k]; }); delete h.dataset.decodificando; h.removeAttribute('aria-label'); document.removeEventListener('idioma', cortar); };
+  document.addEventListener('idioma', cortar, { once: true });
   const cuadro = ahora => {
     if (!('decodificando' in h.dataset)) return;
-    if (quieto()) { cortar(); return; }
     const t = ahora - inicio;
     if (ahora - ultimo > 45) {
       ultimo = ahora; let listo = true;
@@ -285,15 +265,15 @@ $$('[data-pase]:not(.practica)').forEach(f => new IntersectionObserver(([e], io)
       const linea = 'M' + pts.map(p => p.join(' ')).join('L'), area = linea + `L200 40L0 40Z`;
       const leds = dias.map(([f, d], i) => { const r = d.total ? d.ok / d.total : 0; return `<i style="--i:${i}" class="${r === 1 ? '' : r > 0 ? 'parcial' : 'caida'}" title="${f}: ${d.ok}/${d.total} · ${d.ms} ms"></i>`; }).join('');
       return `<article class="panel servicio" style="--k:${k}">
-        <header class="panel-cabeza"><b>${s.nombre}</b><span class="estado${arriba ? '' : ' alerta'}"><i></i>${arriba ? t('último día sin fallas', 'no failures on last day') : t('fallas en el último día', 'failures on last day')}</span></header>
+        <header class="panel-cabeza"><b>${s.nombre}</b><span class="estado${arriba ? '' : ' alerta'}"><i></i>${arriba ? t('operativo', 'operational') : t('con fallas hoy', 'failing today')}</span></header>
         <div class="panel-cifras">
-          <p class="cifra-grande"><span class="flap" aria-label="${pctTxt}%">${fichas(pctTxt)}<span class="ficha-s">%</span></span><small>${t('comprobaciones respondidas', 'checks answered')}</small></p>
+          <p class="cifra-grande"><span class="flap" aria-label="${pctTxt}%">${fichas(pctTxt)}<span class="ficha-s">%</span></span><small>${t('respondió', 'up')}</small></p>
           <p class="cifra-chica"><b class="cuenta" data-cuenta="${ms}">${ms}</b><small>ms ${t('de promedio', 'average')}</small></p>
           <p class="cifra-chica"><b>${dias.length}</b><small>${t('días medidos', 'days measured')}</small></p>
         </div>
         <svg class="spark" viewBox="0 0 200 40" preserveAspectRatio="none" aria-hidden="true"><path class="spark-area" d="${area}"/><path class="spark-linea" d="${linea}" pathLength="1"/></svg>
         <div class="leds" aria-hidden="true">${leds}</div>
-        <p class="panel-pie">${t('Tiempo de respuesta diario · un LED por día', 'Daily response time · one LED per day')}</p>
+        <p class="panel-pie">${t('respuesta por día y un LED por día', 'response per day and one LED per day')}</p>
       </article>`;
     }).join('');
     const fecha = new Date(datos.actualizado);
@@ -326,7 +306,7 @@ $$('[data-pase]:not(.practica)').forEach(f => new IntersectionObserver(([e], io)
 // ═══════════ v7 «Cromo vivo» ═══════════
 
 // ——— Fondo por sección: el tono de la sección que cruza el centro pinta el body, la barra del navegador y el ASCII ———
-const TINTES = { '#101526': [163, 190, 255], '#0A0A0A': [143, 166, 255], '#060A1E': [143, 166, 255], '#0A1020': [168, 176, 218], '#0A1842': [143, 166, 255], '#110B2E': [190, 160, 255], '#06171B': [120, 220, 205], '#1C0F2C': [230, 165, 255], '#041E28': [120, 200, 255], '#2D5BFF': [255, 255, 255] };
+const TINTES = { '#0A0A0A': [143, 166, 255], '#060A1E': [143, 166, 255], '#0A1020': [168, 176, 218], '#0A1842': [143, 166, 255], '#110B2E': [190, 160, 255], '#06171B': [120, 220, 205], '#1C0F2C': [230, 165, 255], '#041E28': [120, 200, 255], '#2D5BFF': [255, 255, 255] };
 // El tinte (ASCII y rastro del puntero) no salta: se acerca al de la sección con cada cuadro. En el Ciclo DevOps toma el
 // color de la etapa activa y el fondo de la página se tiñe apenas con ese color.
 let tinte = [...TINTES['#0A0A0A']], tinteMeta = tinte.slice();
@@ -352,7 +332,7 @@ const deHex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
     const a = color(s), b = vecina ? color(vecina) : a, mezcla = a.map((c, k) => Math.round(c + (b[k] - c) * t));
     raiz.style.setProperty('--fondo', `rgb(${mezcla.join(',')})`);
     if (s.dataset.tono !== tono || s === ciclo) {
-      tono = s.dataset.tono; meta.content = tono; raiz.toggleAttribute('data-claro', tono === '#2D5BFF');
+      tono = s.dataset.tono; meta.content = tono; raiz.toggleAttribute('data-claro', tono === '#2D5BFF'); raiz.toggleAttribute('data-fondo-propio', 'fondo' in s.dataset);
       tinteMeta = s === ciclo ? deHex(etapa) : (TINTES[tono] || tinteMeta); document.dispatchEvent(new Event('tono'));
     }
   }
@@ -536,9 +516,7 @@ document.addEventListener('idioma', iconizar);
   botones.forEach((b, i) => b.addEventListener('click', () => { scrollTo({ top: lugar(i), behavior: quieto() ? 'instant' : 'smooth' }); elegir(i); }));
   // Desde otra sección (Experiencia): salta a la etapa y marca la frase de esa empresa
   window.cvIrEtapa = (i, empresa) => {
-    if (quieto()) pasos[i].scrollIntoView({ behavior: 'instant' });
-    else { scrollTo({ top: lugar(i), behavior: 'instant' }); elegir(i); }
-    (quieto() ? pasos[i] : botones[i]).focus({ preventScroll: true });
+    scrollTo({ top: lugar(i), behavior: 'instant' }); elegir(i);
     if (!empresa) return;
     $$('dt', pasos[i]).forEach(dt => { const dd = dt.nextElementSibling, si = dt.textContent.includes(empresa); dd?.toggleAttribute('data-menciona', si); dd?.toggleAttribute('data-atenua', !si); });
   };
@@ -560,7 +538,7 @@ document.addEventListener('idioma', iconizar);
   let acumulado = 0, bloqueo = 0;
   addEventListener('wheel', e => {
     const r = sec.getBoundingClientRect();
-    if (quieto() || e.ctrlKey || r.top > 1 || r.bottom < innerHeight - 1 || Math.abs(e.deltaX) > Math.abs(e.deltaY)) { acumulado = 0; return; }
+    if (e.ctrlKey || r.top > 1 || r.bottom < innerHeight - 1 || Math.abs(e.deltaX) > Math.abs(e.deltaY)) { acumulado = 0; return; }
     const sentido = Math.sign(e.deltaY), destino = actual + sentido;
     if (destino < 0) { e.preventDefault(); scrollTo({ top: inicio() - 2, behavior: 'instant' }); return; }
     if (destino >= pasos.length) { e.preventDefault(); scrollTo({ top: inicio() + recorrido() + 2, behavior: 'instant' }); return; }
@@ -656,11 +634,9 @@ document.addEventListener('idioma', iconizar);
     estado.textContent = t('La tienda se abrió dentro del celular. Abajo están volver, inicio, avanzar y cerrar.', 'The store opened inside the phone. Back, home, forward and close are below it.');
     setTimeout(() => frame.focus(), quieto() ? 0 : 500);
   }
-  function cerrar(devolverFoco = true) {
-    if (!abierta) return;
-    abierta = false; clearInterval(vigia); cel.removeAttribute('data-abierta'); controles.hidden = true; apuntar(-8, 4);
-    estado.textContent = t('La tienda se cerró.', 'The store closed.');
-    if (devolverFoco) { sonar('off'); play.focus(); }
+  function cerrar() {
+    abierta = false; clearInterval(vigia); cel.removeAttribute('data-abierta'); controles.hidden = true; apuntar(-8, 4); sonar('off');
+    estado.textContent = t('La tienda se cerró.', 'The store closed.'); play.focus();
   }
   play.addEventListener('click', abrir);
   boton('cerrar').addEventListener('click', cerrar);
@@ -668,9 +644,8 @@ document.addEventListener('idioma', iconizar);
   atras.addEventListener('click', () => { if (pasos > 0) { pasos--; adelantes++; rotular(); history.back(); sonar('click', { tono: .85 }); } });
   adelante.addEventListener('click', () => { if (adelantes > 0) { pasos++; adelantes--; rotular(); history.forward(); sonar('click', { tono: 1.15 }); } });
   controles.addEventListener('keydown', e => { if (e.key === 'Escape') cerrar(); });
-  sec.addEventListener('vista-proyecto', e => { if (e.detail !== 0) cerrar(false); });
   addEventListener('resize', () => { if (frame) escala(); });
-  // Los enlaces dedicados pueden abrir el celular sin cambiar el destino del sitio real.
+  // Todo enlace del CV a masterpet.com.ar abre la tienda dentro del celular (con Ctrl o Cmd sigue abriendo una pestaña).
   $$('[data-abrir-celular]').forEach(a => a.addEventListener('click', e => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
     e.preventDefault(); cel.scrollIntoView({ behavior: quieto() ? 'auto' : 'smooth', block: 'center' }); setTimeout(abrir, quieto() ? 0 : 450);
@@ -737,43 +712,20 @@ document.addEventListener('idioma', iconizar);
   document.addEventListener('visibilitychange', prender); document.addEventListener('movimiento', prender); prender();
 })();
 
-// ——— Rastro del puntero (E370) y etiqueta de modo (E374). Sólo con mouse y con movimiento: una cinta que se afina hacia atrás,
-// del color del tono de la sección; se alarga y brilla con la velocidad y desaparece al quedarse quieto. El cursor del sistema
-// no se esconde nunca. Sobre el ∞ de la portada, la etiqueta avisa que se puede girar arrastrando. ———
+// ——— Etiqueta de modo (E374): sobre el ∞ de la portada avisa que se puede girar arrastrando. Sólo con mouse; el cursor del
+// sistema no se esconde nunca. (El rastro del puntero ahora son letras en el fondo ASCII.) ———
 if (matchMedia('(hover:hover) and (pointer:fine)').matches) (function estela() {
-  const cv = document.createElement('canvas'), etq = document.createElement('span');
-  cv.className = 'estela'; etq.className = 'estela-etiqueta'; cv.setAttribute('aria-hidden', 'true'); etq.setAttribute('aria-hidden', 'true');
-  document.body.append(cv, etq);
-  const ctx = cv.getContext('2d'), VIDA = 280;
-  let dpr = 1, hx = -1e4, hy = -1e4, tx = -1e4, ty = -1e4, dentro = false, corriendo = false, rastro = [];
-  const medir = () => { dpr = Math.min(devicePixelRatio || 1, 2); cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; };
-  medir(); addEventListener('resize', medir);
-  addEventListener('pointermove', e => {
-    if (e.pointerType !== 'mouse') return;
-    tx = e.clientX; ty = e.clientY; if (!dentro) { hx = tx; hy = ty; dentro = true; }
-    pedir();
-  }, { passive: true });
+  const etq = document.createElement('span');
+  etq.className = 'estela-etiqueta'; etq.setAttribute('aria-hidden', 'true'); document.body.append(etq);
+  let tx = -1e4, ty = -1e4, dentro = false, corriendo = false;
+  addEventListener('pointermove', e => { if (e.pointerType !== 'mouse') return; tx = e.clientX; ty = e.clientY; dentro = true; pedir(); }, { passive: true });
   raiz.addEventListener('pointerleave', () => { dentro = false; pedir(); });
-  function tic(ahora) {
-    // La cinta de color ya no se dibuja: el rastro del puntero ahora son letras en el fondo ASCII
-    while (rastro.length && ahora - rastro[0].t > VIDA) rastro.shift();
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, innerWidth, innerHeight); ctx.lineCap = 'round';
-    const [r, g, b] = tinte;
-    for (let i = 1; i < rastro.length; i++) {
-      const p = rastro[i - 1], q = rastro[i], k = 1 - (ahora - q.t) / VIDA, rapidez = Math.min(1, Math.hypot(q.x - p.x, q.y - p.y) / 28);
-      if (rapidez < .02) continue;
-      ctx.strokeStyle = `rgba(${r},${g},${b},${(k * k * (.35 + .6 * rapidez)).toFixed(3)})`;
-      ctx.lineWidth = .6 + k * (1.6 + 4.4 * rapidez);
-      ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke();
-    }
+  function tic() {
     // Etiqueta de modo: sólo donde el gesto cambia de sentido (mirar → girar el ∞)
-    const girando = raiz.hasAttribute('data-arrastre'), sobre = raiz.hasAttribute('data-sobre-bucle');
-    etq.toggleAttribute('data-visible', dentro && (girando || sobre));
-    if (dentro && (girando || sobre)) {
-      etq.textContent = girando ? t('Girando', 'Rotating') : t('Arrastrá para girar', 'Drag to rotate');
-      etq.style.transform = `translate(${tx + 18}px,${ty + 20}px)`;
-    }
-    if (rastro.length || (dentro && (girando || sobre))) requestAnimationFrame(tic); else corriendo = false;
+    const girando = raiz.hasAttribute('data-arrastre'), sobre = raiz.hasAttribute('data-sobre-bucle'), ver = dentro && (girando || sobre);
+    etq.toggleAttribute('data-visible', ver);
+    if (ver) { etq.textContent = girando ? t('Girando', 'Rotating') : t('Arrastrá para girar', 'Drag to rotate'); etq.style.transform = `translate(${tx + 18}px,${ty + 20}px)`; requestAnimationFrame(tic); }
+    else corriendo = false;
   }
   function pedir() { if (!corriendo) { corriendo = true; requestAnimationFrame(tic); } }
 })();
@@ -879,7 +831,7 @@ if (matchMedia('(hover:hover) and (pointer:fine)').matches) {
     const texto = new Intl.DateTimeFormat(ingles ? 'en-US' : 'es-AR', { timeZone: ZONA, hour: '2-digit', minute: '2-digit', hour12: ingles }).format(ahora);
     const dif = Math.round((OFFSET_BA + ahora.getTimezoneOffset()) / 60);
     const rel = dif === 0 ? t('tu misma hora', 'same time as you') : dif > 0 ? t(`${dif} h más que vos`, `${dif} h ahead of you`) : t(`${-dif} h menos que vos`, `${-dif} h behind you`);
-    el.innerHTML = `${hBA >= 7 && hBA < 19 ? SOL : LUNA}<time>${texto}</time><span class="hora-rel">· ${rel}</span>`;
+    el.innerHTML = `${hBA >= 7 && hBA < 19 ? SOL : LUNA}<time>${texto}</time> · ${rel}`;
   };
   pintar(); document.addEventListener('idioma', pintar);
   const programar = () => setTimeout(() => { pintar(); programar(); }, 60000 - Date.now() % 60000);
@@ -1003,31 +955,6 @@ if (matchMedia('(hover:hover) and (pointer:fine)').matches) {
 
 // (El metal líquido E009 del contacto se reemplazó por la computadora 3D de v7-ordenador.js.)
 
-// ——— E240 · talones que se arrancan: se arrastra (o se toca) el talón perforado y detrás aparece un dato real de esa entrada ———
-(function talones() {
-  $$('[data-talon]').forEach(tal => {
-    const entrada = tal.closest('.entrada'), pegar = $('[data-pegar]', entrada);
-    let ini = null, dx = 0, dy = 0, arrastro = false;
-    const mover = () => tal.style.setProperty('--tx', `${dx}px`) || tal.style.setProperty('--ty', `${dy}px`) || tal.style.setProperty('--tr', `${(dx / 6).toFixed(1)}deg`);
-    const arrancar = () => {
-      entrada.toggleAttribute('data-arrancado', true); tal.setAttribute('aria-expanded', 'true'); sonar('success', { vol: .35 });
-      dx = dy = 0; mover(); setTimeout(() => pegar.focus({ preventScroll: true }), quieto() ? 0 : 420);
-    };
-    tal.addEventListener('pointerdown', e => { if (e.button) return; ini = { x: e.clientX, y: e.clientY }; arrastro = false; tal.setPointerCapture(e.pointerId); tal.toggleAttribute('data-tirando', true); });
-    tal.addEventListener('pointermove', e => {
-      if (!ini) return; dx = Math.max(-10, e.clientX - ini.x); dy = e.clientY - ini.y;
-      if (Math.hypot(dx, dy) > 6) arrastro = true; if (!quieto()) mover();
-    });
-    const soltar = () => {
-      if (!ini) return; ini = null; tal.removeAttribute('data-tirando');
-      if (!arrastro || Math.hypot(dx, dy) > 60) arrancar(); else { dx = dy = 0; mover(); }
-    };
-    tal.addEventListener('pointerup', soltar); tal.addEventListener('pointercancel', () => { ini = null; dx = dy = 0; mover(); tal.removeAttribute('data-tirando'); });
-    tal.addEventListener('click', e => { if (e.detail === 0) arrancar(); }); // teclado (Enter o espacio)
-    pegar.addEventListener('click', () => { entrada.removeAttribute('data-arrancado'); tal.setAttribute('aria-expanded', 'false'); sonar('click', { vol: .25 }); tal.focus({ preventScroll: true }); });
-  });
-})();
-
 // ——— E096 · ícono de pestaña vivo: en el Ciclo toma el color de la etapa y marca cuántas van; «Medir ahora» lo usa para mostrar
 // midiendo, listo o falla. Fuera del ciclo vuelve al ∞ de siempre. ———
 const iconoPestana = (() => {
@@ -1148,139 +1075,117 @@ const iconoPestana = (() => {
   }, { threshold: .35 }).observe($('[data-credenciales]'));
 })();
 
-// Proyecto: estado por scroll en pantalla grande, selección directa en todos los tamaños.
+// ——— Proyecto en slides horizontales (E020). La sección queda fija y el scroll pasa de una slide a la otra de izquierda a
+// derecha. Lo que entra llega girando en espiral desde el fondo (receta «espiral por offset-path» de motionsites, en versión
+// con transform) y lo que sale se aleja achicándose (zoom out), escalonado: primero el título, después el texto, al final el
+// gráfico. Cada slide se queda quieta un rato antes de cambiar. Sólo con pantalla grande y movimiento; si no, todo apilado. ———
 (function proyectoSlides() {
-  const sec = $('[data-proyecto]');
-  const pista = $('[data-pista]', sec), nav = $('[data-proyecto-accesos]', sec);
-  const tabs = $$('a', nav), slides = $$('[data-slide]', sec);
-  const numero = $('[data-ph-n]', sec), barra = $('.ph-barra', sec);
-  const piezas = slides.map(s => $$('.escenario-texto, .celular-figura, .arq, .arq-texto, .caso > *', s));
-  const flujo = i => Math.max(0, i) / (slides.length - 1);
-  const recorrido = () => Math.max(1, sec.offsetHeight - innerHeight);
-  const indiceHash = () => slides.findIndex(s => location.hash === '#' + s.id);
-  let fijo = false, actual = -1, pendiente = false, ultimoProgreso;
-
-  nav.setAttribute('role', 'tablist');
-  tabs.forEach((tab, i) => {
-    tab.setAttribute('role', 'tab');
-    tab.setAttribute('aria-controls', slides[i].id);
-    slides[i].setAttribute('role', 'tabpanel');
-    slides[i].setAttribute('aria-labelledby', tab.id);
-    tab.addEventListener('click', e => {
-      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-      e.preventDefault();
-      ir(i);
-    });
-  });
-
-  function indicador() {
-    const tab = tabs[actual];
-    if (!tab) return;
-    nav.style.setProperty('--tab-x', tab.offsetLeft + 'px');
-    nav.style.setProperty('--tab-w', tab.offsetWidth);
-  }
-  function seleccionar(i) {
-    const focoOculto = i !== actual && slides[actual]?.contains(document.activeElement);
-    for (const [k, slide] of slides.entries()) {
-      const si = k === i;
-      tabs[k].setAttribute('aria-selected', String(si));
-      tabs[k].tabIndex = si ? 0 : -1;
-      slide.inert = !si;
-      slide.hidden = !fijo && !si;
-    }
-    numero.textContent = String(i + 1).padStart(2, '0');
-    const cambio = actual !== i;
-    actual = i;
-    indicador();
-    if (focoOculto) tabs[i].focus({ preventScroll: true });
-    if (cambio) sec.dispatchEvent(new CustomEvent('vista-proyecto', { detail: i }));
-  }
-  function transformar(pos) {
-    pista.style.transform = `translate3d(${-pos * 100 / slides.length}%,0,0)`;
-    for (const [i, lista] of piezas.entries()) {
-      for (const [j, el] of lista.entries()) {
-        const d = pos - i;
-        const w = Math.min(1, Math.max(0, Math.abs(d) * 1.65 + j * .12 - .12));
-        const giro = d < 0 ? -22 * w : 0;
-        el.style.transform = w ? `translateY(${d < 0 ? w * 42 : -w * 25}px) rotate(${giro}deg) scale(${1 - .32 * w})` : '';
-        el.style.opacity = w ? ((1 - w) ** 2).toFixed(3) : '';
-      }
-    }
-  }
+  const sec = $('[data-proyecto]'); if (!sec) return;
+  const pista = $('[data-pista]', sec), slides = $$('[data-slide]', sec), numero = $('[data-ph-n]', sec), barra = $('.ph-barra', sec);
+  const SEL = ['.resultado', '.escenario-texto > p:not(.resultado)', '.escenario-texto .herramientas', '.celular-figura', '.arq', '.arq-texto > *', '.caso > div > *', '.caso figure'];
+  const piezas = slides.map(s => $$(SEL.join(','), s));
+  piezas.forEach(lista => lista.forEach((el, j) => { el.dataset.ph = j; }));
+  let activo = false, pedido = false, ultimoN = -1;
+  const puede = () => innerWidth >= 900 && innerHeight >= 620 && !quieto();
+  const sstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  const limpiar = () => { piezas.flat().forEach(el => { el.style.transform = el.style.opacity = el.style.filter = ''; }); pista.style.transform = ''; };
+  function medir() { const ya = puede(); if (ya !== activo) { activo = ya; sec.toggleAttribute('data-ph-activo', ya); if (!ya) limpiar(); } pedir(); }
   function pintar() {
-    pendiente = false;
-    if (!fijo) return;
-    const p = Math.min(1, Math.max(0, -sec.getBoundingClientRect().top / recorrido()));
-    if (p === ultimoProgreso) return;
-    ultimoProgreso = p;
-    const s = p * (slides.length - 1), base = Math.floor(s);
-    const x = Math.min(1, Math.max(0, (s - base - .26) / .48));
-    const pos = base + x * x * (3 - 2 * x);
-    transformar(pos);
-    barra.style.setProperty('--ph-p', p);
-    const i = Math.round(pos);
-    if (i !== actual) seleccionar(i);
-  }
-  function pedir() {
-    if (!pendiente && fijo) {
-      pendiente = true;
-      requestAnimationFrame(pintar);
-    }
-  }
-  function ir(i, alCapitulo = false) {
-    if (fijo) {
-      const y = scrollY + sec.getBoundingClientRect().top + recorrido() * flujo(i);
-      scrollTo({ top: y, behavior: 'instant' });
-      pintar();
-    } else {
-      seleccionar(i);
-      if (alCapitulo) sec.scrollIntoView({ behavior: 'instant' });
-    }
-  }
-  function modo() {
-    const nuevo = innerWidth >= 900 && innerHeight >= 690 && !quieto();
-    if (nuevo !== fijo) {
-      fijo = nuevo;
-      ultimoProgreso = undefined;
-      sec.toggleAttribute('data-ph-activo', fijo);
-      if (!fijo) {
-        pista.style.transform = '';
-        piezas.flat().forEach(el => { el.style.transform = el.style.opacity = ''; });
-      }
-    }
-    seleccionar(Math.max(0, actual));
-    pedir();
-  }
-  nav.addEventListener('keydown', e => {
-    const i = tabs.indexOf(e.target);
-    const d = { ArrowLeft: -1, ArrowRight: 1 }[e.key];
-    if (i < 0 || (!d && e.key !== 'Home' && e.key !== 'End')) return;
-    e.preventDefault();
-    const destino = d ? (i + d + tabs.length) % tabs.length : e.key === 'Home' ? 0 : tabs.length - 1;
-    ir(destino);
-    tabs[destino].focus({ preventScroll: true });
-  });
-  $$('a[href^="#"]').filter(a => slides.some(s => '#' + s.id === a.hash) && !nav.contains(a)).forEach(a => {
-    a.addEventListener('click', e => {
-      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-      e.preventDefault();
-      history.pushState(null, '', a.hash);
-      const i = indiceHash();
-      ir(i, true);
-      slides[i].focus({ preventScroll: true });
+    pedido = false; if (!activo) return;
+    const r = sec.getBoundingClientRect(), p = Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - innerHeight)));
+    const total = slides.length - 1, s = p * total, base = Math.min(total - 1, Math.floor(s));
+    const pos = s >= total ? total : base + sstep(.28, .72, s - base); // quieta en los extremos de cada tramo, cambio en el medio
+    pista.style.transform = `translate3d(${(-pos * 100 / slides.length).toFixed(3)}%,0,0)`;
+    barra.style.setProperty('--ph-p', p.toFixed(4));
+    const n = Math.round(pos); if (n !== ultimoN) { ultimoN = n; numero.textContent = String(n + 1).padStart(2, '0'); if (r.top < 0 && r.bottom > innerHeight) tic(1.1 + n * .2); }
+    slides.forEach((sl, i) => {
+      const d = pos - i, lista = piezas[i], m = lista.length;
+      lista.forEach((el, j) => {
+        // v = cuánto está en su lugar (1 = quieto). Entra en orden de lectura y sale al revés.
+        const k = d < 0 ? j : m - 1 - j, v = Math.min(1, Math.max(0, (1 - Math.abs(d)) * 2 - k * .14)), w = 1 - v;
+        if (w < .002) { if (el.style.transform) { el.style.transform = el.style.opacity = el.style.filter = ''; } return; }
+        if (d < 0) {
+          // Espiral: gira 240° mientras se acerca al centro, y crece desde .3
+          const th = w * 4.2 + j * .7, rad = w * 260;
+          el.style.transform = `translate3d(${(Math.cos(th) * rad).toFixed(1)}px,${(Math.sin(th) * rad * .6).toFixed(1)}px,0) rotate(${(-w * 38).toFixed(2)}deg) scale(${(.3 + .7 * v).toFixed(3)})`;
+        } else {
+          // Zoom out: se aleja achicándose y se va un poco hacia arriba
+          el.style.transform = `translate3d(0,${(-w * 40).toFixed(1)}px,0) scale(${(1 - w * .6).toFixed(3)})`;
+        }
+        el.style.opacity = (v * v).toFixed(3); el.style.filter = w > .02 ? `blur(${(w * 9).toFixed(1)}px)` : '';
+      });
     });
-  });
-  function visitarHash() {
-    const i = indiceHash();
-    if (i >= 0) ir(i, true);
   }
-  addEventListener('hashchange', visitarHash);
-  addEventListener('scroll', pedir, { passive: true });
-  addEventListener('resize', modo);
-  document.addEventListener('movimiento', modo);
-  document.addEventListener('idioma', indicador);
-  modo();
-  if (indiceHash() >= 0) addEventListener('load', visitarHash, { once: true });
+  const pedir = () => { if (!pedido) { pedido = true; requestAnimationFrame(pintar); } };
+  addEventListener('scroll', pedir, { passive: true }); addEventListener('resize', medir); document.addEventListener('movimiento', medir);
+  medir();
+})();
+
+// ——— Fondos propios por sección (ver v7.css «Fondos propios»). Lienzo compartido: se mide con ResizeObserver, sólo anima
+// mientras se ve y con movimiento reducido queda en un cuadro fijo. ———
+function lienzoVivo(cv, dibujar) {
+  const ctx = cv.getContext('2d'); let w = 0, h = 0, visible = false, corriendo = false;
+  const medir = () => {
+    const d = Math.min(devicePixelRatio || 1, 2) * Number(cv.dataset.escala || 1);
+    w = cv.clientWidth; h = cv.clientHeight; cv.width = Math.round(w * d); cv.height = Math.round(h * d);
+    ctx.setTransform(d, 0, 0, d, 0, 0); dibujar(ctx, w, h, 0, true);
+  };
+  const tic = ahora => { if (!visible || document.hidden || quieto()) { corriendo = false; return; } dibujar(ctx, w, h, ahora); requestAnimationFrame(tic); };
+  const pedir = () => { if (visible && !corriendo && !quieto()) { corriendo = true; requestAnimationFrame(tic); } };
+  new IntersectionObserver(([e]) => { visible = e.isIntersecting; pedir(); }).observe(cv);
+  new ResizeObserver(medir).observe(cv);
+  document.addEventListener('visibilitychange', pedir); document.addEventListener('movimiento', pedir);
+}
+
+// Formación · E006: tres cintas de aurora (suma de dos senos) con los tintes del sitio, en modo «lighter»
+(function aurora() {
+  const cv = $('[data-aurora]'); if (!cv) return;
+  const CINTAS = [[[230, 165, 255], 30, 900, .0006, .16], [[143, 166, 255], 18, 420, .0004, .3], [[120, 220, 205], 24, 640, .0009, .44]];
+  lienzoVivo(cv, (c, w, h, t) => {
+    c.globalCompositeOperation = 'source-over'; c.clearRect(0, 0, w, h); c.globalCompositeOperation = 'lighter';
+    for (const [[r, g, b], amp, largo, vel, alto] of innerWidth < 760 ? CINTAS.slice(0, 2) : CINTAS) {
+      const y0 = h * alto, f = t * vel, gr = c.createLinearGradient(0, y0 - amp * 3, 0, y0 + h * .3);
+      gr.addColorStop(0, `rgba(${r},${g},${b},0)`); gr.addColorStop(.2, `rgba(${r},${g},${b},.26)`); gr.addColorStop(.6, `rgba(${r},${g},${b},.06)`); gr.addColorStop(1, `rgba(${r},${g},${b},0)`);
+      c.fillStyle = gr; c.beginPath(); c.moveTo(0, h);
+      for (let x = 0; x <= w + 12; x += 12) c.lineTo(x, y0 + Math.sin(x / largo * 6.283 + f) * amp * 2 + Math.sin(x / (largo * .47) * 6.283 - f * 1.6) * amp);
+      c.lineTo(w + 12, h); c.closePath(); c.fill();
+    }
+  });
+})();
+
+// Contacto · E004: partículas que se unen con líneas finas cerca unas de otras y se apartan del puntero
+(function constelacion() {
+  const cv = $('[data-red]'); if (!cv) return;
+  let pts = [], px = -1e4, py = -1e4;
+  const zona = cv.closest('section');
+  zona.addEventListener('pointermove', e => { const r = cv.getBoundingClientRect(); px = e.clientX - r.left; py = e.clientY - r.top; }, { passive: true });
+  zona.addEventListener('pointerleave', () => { px = py = -1e4; });
+  lienzoVivo(cv, (c, w, h, t, nuevo) => {
+    const chico = innerWidth < 760, enlace = chico ? 90 : 120, huir = 90;
+    if (nuevo) pts = Array.from({ length: chico ? 40 : 90 }, () => ({ x: Math.random() * w, y: Math.random() * h, vx: (Math.random() - .5) * .4, vy: (Math.random() - .5) * .4, ox: 0, oy: 0, r: 1.2 + Math.random() * .8 }));
+    for (const p of pts) {
+      if (t) { p.x = (p.x + p.vx + w) % w; p.y = (p.y + p.vy + h) % h; }
+      const dx = p.x - px, dy = p.y - py, d = Math.hypot(dx, dy) || 1, f = d < huir ? (1 - d / huir) * .8 * 40 : 0;
+      p.ox += (dx / d * f - p.ox) * .1; p.oy += (dy / d * f - p.oy) * .1;
+    }
+    c.clearRect(0, 0, w, h); c.lineWidth = 1;
+    // ponytail: pares O(n²) con n ≤ 90 (≈4000 distancias por cuadro); grilla espacial si se sube la cantidad
+    for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) {
+      const a = pts[i], b = pts[j], d = Math.hypot(a.x + a.ox - b.x - b.ox, a.y + a.oy - b.y - b.oy);
+      if (d < enlace) { c.strokeStyle = `rgba(255,255,255,${((1 - d / enlace) * .4).toFixed(3)})`; c.beginPath(); c.moveTo(a.x + a.ox, a.y + a.oy); c.lineTo(b.x + b.ox, b.y + b.oy); c.stroke(); }
+    }
+    c.fillStyle = 'rgba(255,255,255,.85)';
+    for (const p of pts) { c.beginPath(); c.arc(p.x + p.ox, p.y + p.oy, p.r, 0, 6.283); c.fill(); }
+  });
+})();
+
+// Proyecto · E007: el foco de la grilla de puntos sigue al puntero (sólo escribe --x/--y, una vez por cuadro)
+(function focoPuntos() {
+  const capa = $('[data-puntos]'); if (!capa) return;
+  const zona = capa.closest('section'); let e = null;
+  const mover = () => { const r = capa.getBoundingClientRect(); capa.style.setProperty('--x', `${e.clientX - r.left}px`); capa.style.setProperty('--y', `${e.clientY - r.top}px`); capa.style.setProperty('--foco', 1); e = null; };
+  zona.addEventListener('pointermove', ev => { if (!e) requestAnimationFrame(mover); e = ev; }, { passive: true });
+  zona.addEventListener('pointerleave', () => capa.style.setProperty('--foco', 0));
 })();
 
 aplicarIdioma();

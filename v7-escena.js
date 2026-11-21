@@ -29,7 +29,7 @@ try {
   const curva = new Lemniscata(), grupo = new THREE.Group(); scene.add(grupo);
   const cromo = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 1, roughness: .06, clearcoat: 1, clearcoatRoughness: .04, envMapIntensity: 2 });
   // Ocho tramos: lóbulo izquierdo = desarrollo (planificar, código, build, pruebas), derecho = operación.
-  const INICIO = .25, centro = k => (INICIO + (k + .5) / 8) % 1;
+  const INICIO = .25;
   const tramoCurva = k => new Lemniscata(INICIO + k / 8, INICIO + (k + 1) / 8);
   // El tubo son ocho piezas (pedido del dueño, boceto rojo): en el ciclo la pieza de la etapa activa se desprende del bucle,
   // sube y crece, como una vista explosionada (E250). Cada pieza lleva adentro su tramo de color; las geometrías están
@@ -190,7 +190,7 @@ try {
   };
   medir(); addEventListener('resize', medir);
 
-  const anchoPx = (tipo, r) => tipo === 'portada' ? (innerWidth < 860 ? r.width * .92 : Math.min(r.width * .94, r.height * 1.52, 820)) : innerWidth > 860 ? Math.max(240, Math.min(r.width * .46, r.height * 1.25, innerWidth - 2 * (16 + 300) - 70)) : Math.min(r.width * .9, r.height * 1.8);
+  const anchoPx = (tipo, r) => tipo === 'portada' ? (innerWidth < 860 ? r.width * .92 : Math.min(r.width * .52, r.height * 1.25, 820)) : innerWidth > 860 ? Math.max(240, Math.min(r.width * .46, r.height * 1.25, innerWidth - 2 * (16 + 300) - 70)) : Math.min(r.width * .9, r.height * 1.8);
   const progresoTray = () => { if (!tray) return 0; const r = tray.getBoundingClientRect(); return Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - innerHeight))); };
   function objetivo() {
     const H = innerHeight, u = unidad();
@@ -217,9 +217,19 @@ try {
   // Ancho de una columna de etiquetas: la etiqueta más ancha de la etapa, su escalonado y el aire hasta el tubo
   const columnaEtq = () => (etiquetas.length ? Math.max(...etiquetas.map(e => e.w)) : 220) + 30 + 34;
   const suave = x => 1 - (1 - x) ** 3;
+  // Ensamble (pedido del dueño: «mejorá… cómo aparece en pantalla el infinito»): cada vez que el ∞ aparece (al cargar la
+  // portada o al llegar al Ciclo), sus ocho piezas llegan desde afuera girando y se encastran una detrás de otra con un
+  // pequeño rebote. Con movimiento reducido aparece armado.
+  const rebote = t => { const c = 1.45, u = t - 1; return 1 + (c + 1) * u ** 3 + c * u ** 2; };
+  let armadoVisible = false;
+  const dir = new THREE.Vector3();
 
   function paso(dt) {
-    const o = objetivo(), k = quieto() ? 1 : .1, p = progresoTray(), mouse = quieto() ? 0 : 1, wt = o.w.trayectoria; ultimo = o;
+    // Interpolación por tiempo (no por cuadro): igual de suave a 60 que a 144 Hz
+    const o = objetivo(), k = quieto() ? 1 : 1 - Math.pow(.9, dt * 60), p = progresoTray(), mouse = quieto() ? 0 : 1, wt = o.w.trayectoria; ultimo = o;
+    const ahoraMs = performance.now();
+    if (cur.o > .08 && !armadoVisible) { armadoVisible = true; if (!quieto()) piezas.forEach((pz, i) => { pz.userData.armeIni = ahoraMs + i * 75 + Math.random() * 70; pz.userData.giroArme = (Math.random() - .5) * 2.4; }); }
+    else if (cur.o < .02) armadoVisible = false;
     if (!arrastre && o.w.portada < .5) marcar('data-sobre-bucle', false); // al bajar con la rueda no hay pointermove que la apague
     if (!arrastre) { giro += vel; vel *= .9; incl *= .96; }
     rayo = Math.min(1, rayo + dt / .65);
@@ -233,11 +243,17 @@ try {
     for (const [c, val] of [['x', px], ['y', py], ['s', o.s], ['o', o.o], ['park', wt], ['ry', ry], ['rx', rx]]) { const nuevo = mezclar(cur[c], val, k); if (Math.abs(nuevo - cur[c]) > 1e-5) cambio = true; cur[c] = nuevo; }
     // Piezas: la activa sube con su alza; el resto vuelve. Fuera del ciclo ninguna se mueve.
     piezas.forEach((pz, i) => {
-      const meta = i === activa ? cur.park : 0, a = mezclar(pz.userData.alza, meta, quieto() ? 1 : .09);
+      const meta = i === activa ? cur.park : 0, a = mezclar(pz.userData.alza, meta, quieto() ? 1 : 1 - Math.pow(.91, dt * 60));
       if (Math.abs(a - pz.userData.alza) > 1e-4) cambio = true;
       pz.userData.alza = a; const e = suave(a), m = pz.userData.medio;
-      pz.position.set(m.x + Math.sign(m.x || 1) * ALZA.costado * e, m.y + alzaArriba * e, m.z + ALZA.frente * e);
-      pz.scale.setScalar(1 + ALZA.crece * e);
+      // Ensamble: fuera = 1 recién aparece (lejos, girada y chica), 0 encastrada
+      const tA = pz.userData.armeIni ? Math.min(1, Math.max(0, (ahoraMs - pz.userData.armeIni) / 950)) : 1, fuera = 1 - (tA >= 1 ? 1 : rebote(tA));
+      if (tA < 1) cambio = true;
+      dir.set(m.x, m.y, 0).normalize();
+      pz.position.set(m.x + Math.sign(m.x || 1) * ALZA.costado * e + dir.x * fuera * 2.6, m.y + alzaArriba * e + dir.y * fuera * 2.6 - fuera * .4, m.z + ALZA.frente * e + fuera * 2.4);
+      const g = (pz.userData.giroArme || 0) * fuera; pz.rotation.set(g, g * .7, g * .45);
+      pz.scale.setScalar((1 + ALZA.crece * e) * Math.max(.05, 1 - Math.min(1, Math.max(0, fuera)) * .65));
+      pz.userData.fuera = fuera;
     });
     grupo.scale.setScalar(cur.s); grupo.rotation.set(cur.rx, cur.ry, 0);
     grupo.position.set(cur.x, cur.y, 0); grupo.updateMatrixWorld();
@@ -271,7 +287,7 @@ try {
     // Cuentas: en la portada quietas sobre el ∞; en el ciclo, una en el centro de cada tramo. La activa no crece: se ilumina con su color.
     cuentas.forEach((c, i) => {
       // En el ciclo cada cuenta va en el medio de su pieza: si la pieza sube, la cuenta sube con ella
-      curva.getPoint(i / 8, v); c.position.copy(v.lerp(b.copy(piezas[i].position), cur.park)); c.scale.setScalar(1 + .35 * suave(piezas[i].userData.alza));
+      curva.getPoint(i / 8, v); c.position.copy(v.lerp(b.copy(piezas[i].position), cur.park)); c.scale.setScalar((1 + .35 * suave(piezas[i].userData.alza)) * Math.max(.001, 1 - Math.min(1, Math.max(0, piezas[i].userData.fuera || 0)) * 1.4));
       const si = cur.park > .5 && i === activa;
       tono.setHex(ESPECTRO[i]);
       c.material.color.lerpColors(azulCuenta, tono, si ? 1 : 0); c.material.emissive.lerpColors(azulBrillo, tono, si ? 1 : 0);

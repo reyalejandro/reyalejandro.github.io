@@ -30,10 +30,7 @@ if (cajas.length) try {
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
     renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15; renderer.outputColorSpace = THREE.SRGBColorSpace;
     const scene = new THREE.Scene(), pmrem = new THREE.PMREMGenerator(renderer);
-    const sala = new RoomEnvironment();
-    scene.environment = pmrem.fromScene(sala, .04).texture;
-    sala.dispose();
-    pmrem.dispose();
+    scene.environment = pmrem.fromScene(new RoomEnvironment(), .04).texture;
     scene.add(new THREE.HemisphereLight(0xbfd0ff, 0x0a0f2a, .9));
     const sol = new THREE.DirectionalLight(0xffffff, 1.6); sol.position.set(-5, 9, 6); scene.add(sol);
     const azul = new THREE.PointLight(0x2d5bff, 18, 18); azul.position.set(3, 2.5, 4); scene.add(azul);
@@ -44,7 +41,7 @@ if (cajas.length) try {
     const etiquetas = [...caja.querySelectorAll('[data-ancla]')].map(el => ({ el, ancla: escena.anclas[el.dataset.ancla] })).filter(e => e.ancla);
     let yaw = escena.yaw ?? -.62, pitch = escena.pitch ?? .62, metaYaw = yaw, extra = 0, mx = 0, my = 0, radio = escena.radio ?? 11;
     let sucio = true, enVista = false, corriendo = false, arr = null, antes = performance.now();
-    const medir = () => { const w = caja.clientWidth, h = caja.clientHeight; if (!w || !h) return; renderer.setPixelRatio(Math.min(devicePixelRatio || 1, innerWidth < 760 ? 1.25 : 1.5)); renderer.setSize(w, h, false); camera.aspect = w / h; radio = (escena.radio ?? 11) * Math.max(1, 1.45 / camera.aspect) * (innerWidth < 700 ? 1.3 : 1); camera.updateProjectionMatrix(); sucio = true; arrancar(); };
+    const medir = () => { const w = caja.clientWidth, h = caja.clientHeight; if (!w || !h) return; renderer.setPixelRatio(Math.min(devicePixelRatio || 1, innerWidth < 760 ? 1.25 : 1.5)); renderer.setSize(w, h, false); camera.aspect = w / h; radio = (escena.radio ?? 11) * Math.max(1, 1.45 / camera.aspect) * (innerWidth < 700 ? 1.3 : 1); camera.updateProjectionMatrix(); sucio = true; };
     new ResizeObserver(medir).observe(caja); medir();
     caja.addEventListener('pointermove', e => { const r = caja.getBoundingClientRect(); mx = (e.clientX - r.left) / r.width * 2 - 1; my = (e.clientY - r.top) / r.height * 2 - 1; if (arr) { extra = arr.extra + (e.clientX - arr.x) * .008; } sucio = true; arrancar(); });
     caja.addEventListener('pointerleave', () => { mx = my = 0; arrancar(); });
@@ -69,19 +66,12 @@ if (cajas.length) try {
       camera.position.set(Math.sin(yaw) * Math.cos(pitch) * radio, Math.sin(pitch) * radio, Math.cos(yaw) * Math.cos(pitch) * radio).add(escena.mira ?? v.set(0, .6, 0));
       camera.lookAt(escena.mira ?? v.set(0, .6, 0));
       const anima = escena.tic ? escena.tic(ahora, dt, q) : false;
-      if (!sucio && !anima && Math.abs(dy) + Math.abs(dp) <= 1e-4) {
-        corriendo = false;
-        return;
-      }
-      renderer.render(scene, camera);
-      ubicarEtiquetas();
-      sucio = false;
+      if (sucio || anima || Math.abs(dy) + Math.abs(dp) > 1e-4) { renderer.render(scene, camera); ubicarEtiquetas(); sucio = false; }
       requestAnimationFrame(cuadro);
     }
     function arrancar() { if (corriendo || !enVista) return; corriendo = true; antes = performance.now(); requestAnimationFrame(cuadro); }
     new IntersectionObserver(([e]) => { enVista = e.isIntersecting; if (enVista) { sucio = true; arrancar(); } }, { rootMargin: '80px' }).observe(caja);
     document.addEventListener('visibilitychange', arrancar);
-    document.addEventListener('movimiento', () => { sucio = true; arrancar(); });
     escena.despertar = () => { sucio = true; arrancar(); };
     // Tocar un modelo es como tocar su etiqueta
     if (escena.tocables) {
