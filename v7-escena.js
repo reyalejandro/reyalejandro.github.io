@@ -85,7 +85,7 @@ try {
       el.addEventListener('pointerenter', () => resaltar(true));
       el.addEventListener('pointerleave', () => { if (!el.hasAttribute('data-abierta')) resaltar(false); });
       // Toque: la ficha de dónde la usé, anclada a la etiqueta; la frase de arriba queda resaltada mientras está abierta
-      el.addEventListener('click', () => window.cvFicha?.abrir({ li, nombre: d.nombre || d.texto, icono: d.chip?.querySelector('svg')?.outerHTML, terminos: d.grupo || (d.tipo === 'herr' ? d.texto.split('·').map(x => x.trim()) : [d.texto]), grupo: d.grupo, ancla: el, clave }));
+      el.addEventListener('click', () => window.cvFicha?.abrir({ li, nombre: d.nombre || d.texto, icono: d.chip?.querySelector('svg')?.outerHTML, terminos: d.grupo || (d.tipo === 'herr' ? d.texto.split('·').map(x => x.trim()) : [d.texto]), grupo: d.grupo, practica: d.tipo === 'metodo', ancla: el, clave }));
       etiquetas.push({ el, clave, resaltar, w: 0, h: 0, x: 0, y: 0, ax: 0, ay: 0, k, n: todas.length });
     });
     etiquetas.forEach(e => { e.w = e.el.offsetWidth; e.h = e.el.offsetHeight; });

@@ -528,6 +528,7 @@ document.addEventListener('idioma', iconizar);
     if ((sec.dataset.completo || '') === modo) return;
     if (modo) sec.dataset.completo = modo; else delete sec.dataset.completo;
     verTodo?.setAttribute('aria-pressed', String(!!modo));
+    window.cvFicha?.cerrar(); // las etiquetas cambian de lugar con la vista: una ficha abierta quedaría señalando a la nada
   };
   verTodo?.addEventListener('click', () => { completo(sec.dataset.completo ? '' : 'manual'); sonar('click', { tono: sec.dataset.completo ? 1.2 : 1.6, vol: .25 }); });
   const medir = () => {
@@ -566,6 +567,8 @@ document.addEventListener('idioma', iconizar);
   addEventListener('wheel', e => {
     const r = sec.getBoundingClientRect();
     if (e.ctrlKey || r.top > 1 || r.bottom < innerHeight - 1 || Math.abs(e.deltaX) > Math.abs(e.deltaY)) { acumulado = 0; return; }
+    // Con una ficha abierta, la rueda primero la cierra y no mueve nada más: mientras se lee, la escena queda quieta
+    if (window.cvFicha?.abierta()) { e.preventDefault(); const ya = performance.now(); if (ya >= bloqueo) { window.cvFicha.cerrar(); bloqueo = ya + 450; acumulado = 0; } return; }
     const sentido = Math.sign(e.deltaY), destino = actual + sentido;
     if (destino < 0) { e.preventDefault(); scrollTo({ top: inicio() - 2, behavior: 'instant' }); return; }
     if (destino >= pasos.length) { e.preventDefault(); scrollTo({ top: inicio() + recorrido() + 2, behavior: 'instant' }); return; }
@@ -1053,7 +1056,10 @@ const iconoPestana = (() => {
     return h;
   };
   function usos(li, terminos) {
-    const claves = terminos.map(sinTildes), tiene = txt => claves.some(c => sinTildes(txt).includes(c));
+    const enteras = terminos.map(sinTildes), nucleo = t => t.split(' ').slice(1).join(' ').replace(/^((de|del|la|las|el|los|y|en|con) )+/, '');
+    let claves = enteras; const buscar = () => $$('dl dd', li).some(dd => claves.some(c => sinTildes(dd.textContent).includes(c)));
+    if (!buscar()) { const otras = enteras.map(nucleo).filter(c => c.length > 5); if (otras.length) claves = otras; }
+    const tiene = txt => claves.some(c => sinTildes(txt).includes(c)); marcadas = claves;
     const lista = [];
     $$('dl dt', li).forEach(dt => {
       const dd = dt.nextElementSibling; if (!dd) return;
@@ -1065,8 +1071,8 @@ const iconoPestana = (() => {
     if (pr && tiene(pr.textContent)) return [{ donde: $('.practica-et', pr)?.textContent.trim(), titulo: $('h4', pr)?.textContent.trim(), frases: [$('h4 + p', pr)?.textContent.trim()] }];
     return $$('dl dt', li).map(dt => ({ donde: dt.textContent.trim(), frases: [dt.nextElementSibling?.textContent.trim()], general: true }));
   }
-  let abierta = null, origen = null;
-  function abrir({ li, nombre, icono, terminos, ancla, teclado, clave, grupo }) {
+  let abierta = null, origen = null, marcadas = [];
+  function abrir({ li, nombre, icono, terminos, ancla, teclado, clave, grupo, practica }) {
     if (abierta === clave && !ficha.hidden) { cerrar(); return; }
     const lista = usos(li, terminos);
     ficha.style.setProperty('--c', li.style.getPropertyValue('--c'));
@@ -1074,8 +1080,8 @@ const iconoPestana = (() => {
       + `<div><b id="ficha-uso-t">${esc(nombre)}</b><small>${esc($('.etiqueta', li)?.textContent.trim())} · ${esc($('h3', li)?.textContent.trim())}</small></div>`
       + `<button type="button" class="fu-cerrar" aria-label="${t('Cerrar', 'Close')}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></header>`
       + (grupo ? `<ul class="fu-chips">${grupo.map(g => `<li>${esc(g)}</li>`).join("")}</ul>` : "")
-      + lista.map(u => `<section><p class="fu-donde">${esc(u.donde)}</p>${u.titulo ? `<p class="fu-titulo">${esc(u.titulo)}</p>` : ''}${u.frases.map(f => `<p class="fu-frase">${marcar(f, terminos)}</p>`).join('')}</section>`).join('')
-      + (lista[0]?.general ? `<p class="fu-nota">${t('Herramienta de esta etapa del ciclo', 'Tool used in this stage of the loop')}</p>` : '');
+      + lista.map(u => `<section><p class="fu-donde">${esc(u.donde)}</p>${u.titulo ? `<p class="fu-titulo">${esc(u.titulo)}</p>` : ''}${u.frases.map(f => `<p class="fu-frase">${marcar(f, [...terminos, ...marcadas])}</p>`).join('')}</section>`).join('')
+      + (lista[0]?.general ? `<p class="fu-nota">${practica ? t('Práctica de esta etapa del ciclo', 'Practice in this stage of the loop') : t('Herramienta de esta etapa del ciclo', 'Tool used in this stage of the loop')}</p>` : '');
     $('.fu-cerrar', ficha).addEventListener('click', cerrar);
     ficha.removeAttribute('data-abierta'); ficha.hidden = false;
     const globo = !!ancla && innerWidth > 860;
@@ -1101,7 +1107,7 @@ const iconoPestana = (() => {
   document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrar(); });
   document.addEventListener('pointerdown', e => { if (!ficha.hidden && !ficha.contains(e.target) && !e.target.closest('.rayos-etq .etq, .herramientas li')) cerrar(); });
   document.addEventListener('etapa', cerrar); document.addEventListener('idioma', cerrar); addEventListener('resize', cerrar);
-  window.cvFicha = { abrir, cerrar };
+  window.cvFicha = { abrir, cerrar, abierta: () => !ficha.hidden };
 })();
 
 // ——— Botón para volver arriba: aparece después de la primera pantalla; con movimiento reducido salta sin animar ———
