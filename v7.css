@@ -1238,3 +1238,20 @@ button.etq3d { cursor:pointer; }
 @media (max-width:860px) and (any-pointer:coarse) { .subir { width:44px; height:44px; } }
 @media (prefers-reduced-motion:reduce) { .subir:hover svg { animation:none; } }
 @media print { .subir { display:none!important; } }
+
+
+/* ——— Ciclo: botón «Ciclo completo» (pedido del dueño): en la esquina de la zona del ∞, encima del espectro.
+   Apretado muestra el ∞ entero con la etapa resaltada; suelto, el zoom a la etapa. ——— */
+.ver-todo { grid-row:3; grid-column:1; justify-self:end; align-self:end; position:relative; z-index:8; margin:0 4px 6px 0;
+  display:inline-flex; align-items:center; gap:8px; min-height:36px; padding:0 14px; border-radius:999px; cursor:pointer;
+  font:500 .6875rem/1 var(--mono); letter-spacing:.08em; text-transform:uppercase; color:var(--tinta);
+  background:rgb(16 18 29 / .7); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px);
+  border:1px solid color-mix(in oklab,var(--c-act,#8fa6ff) 45%,transparent); transition:background .3s ease, border-color .3s ease, transform 600ms var(--resorte); }
+.ver-todo svg { width:18px; height:18px; flex:none; fill:none; stroke:var(--c-act,#8fa6ff); stroke-width:1.8; }
+.ver-todo:hover { border-color:var(--c-act,#8fa6ff); transform:translateY(-1px); }
+.ver-todo[aria-pressed="true"] { background:color-mix(in oklab,var(--c-act,#8fa6ff) 30%,rgb(16 18 29 / .8)); border-color:var(--c-act,#8fa6ff); }
+.ver-todo:focus-visible { outline:2px solid var(--c-act,#8fa6ff); outline-offset:3px; }
+html:not([data-tres]) .ver-todo { display:none; } /* sin 3D no hay ∞ que mostrar */
+@media (max-width:860px) { .ver-todo { min-height:32px; padding:0 10px; gap:6px; font-size:.625rem; margin:0 0 4px; } .ver-todo svg { width:15px; height:15px; } }
+@media (max-width:860px) and (any-pointer:coarse) { .ver-todo { min-height:40px; } }
+@media print { .ver-todo { display:none!important; } }

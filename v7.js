@@ -519,9 +519,22 @@ document.addEventListener('idioma', iconizar);
     }
     actual = i; document.dispatchEvent(new CustomEvent('etapa', { detail: i }));
   };
+  // Vista completa del ∞ (pedido del dueño, 21/11): al llegar desde arriba se ve el ∞ entero con la etapa resaltada y la
+  // primera rueda hace zoom a la etapa («auto»). El botón alterna a mano entre el ∞ entero y la etapa («manual»); con el
+  // ∞ entero la rueda sólo mueve el resaltado. v7-escena.js lee data-completo en cada cuadro.
+  const verTodo = $('[data-ver-todo]', sec);
+  const completo = modo => {
+    if ((sec.dataset.completo || '') === modo) return;
+    if (modo) sec.dataset.completo = modo; else delete sec.dataset.completo;
+    verTodo?.setAttribute('aria-pressed', String(!!modo));
+  };
+  verTodo?.addEventListener('click', () => { completo(sec.dataset.completo ? '' : 'manual'); sonar('click', { tono: sec.dataset.completo ? 1.2 : 1.6, vol: .25 }); });
   const medir = () => {
     pedido = false;
-    const p = Math.min(1, Math.max(0, -sec.getBoundingClientRect().top / recorrido()));
+    const top = sec.getBoundingClientRect().top, p = Math.min(1, Math.max(0, -top / recorrido()));
+    // Antes de fijarse (viniendo de arriba) vuelve a la vista completa; en el celular, que no tiene rueda, el zoom llega al bajar un poco
+    if (top > innerHeight * .2 && sec.dataset.completo !== 'manual') completo('auto');
+    else if (sec.dataset.completo === 'auto' && top < -innerHeight * .15) completo('');
     elegir(Math.min(pasos.length - 1, Math.floor(p * pasos.length)));
   };
   addEventListener('scroll', () => { if (!pedido) { pedido = true; requestAnimationFrame(medir); } }, { passive: true });
@@ -559,7 +572,9 @@ document.addEventListener('idioma', iconizar);
     const ahora = performance.now();
     acumulado += Math.abs(e.deltaY);
     if (ahora < bloqueo || acumulado < 40) return;
-    acumulado = 0; bloqueo = ahora + 380;
+    acumulado = 0; bloqueo = ahora + 450;
+    // La primera rueda después de llegar hace el zoom a la etapa actual en lugar de pasar a la siguiente
+    if (sentido > 0 && sec.dataset.completo === 'auto') { completo(''); return; }
     scrollTo({ top: lugar(destino), behavior: 'instant' }); elegir(destino);
   }, { passive: false });
   $('.espectro', sec).addEventListener('keydown', e => {
