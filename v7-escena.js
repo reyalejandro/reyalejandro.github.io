@@ -75,16 +75,21 @@ try {
     // Se intercalan para que herramientas y prácticas se repartan por todo el abanico
     const todas = []; for (let i = 0; i < Math.max(herramientas.length, metodos.length); i++) { if (herramientas[i]) todas.push(herramientas[i]); if (metodos[i]) todas.push(metodos[i]); }
     todas.forEach((d, k) => {
-      const el = document.createElement('span'); el.className = 'etq ' + d.tipo; el.innerHTML = d.html; capaEtq.append(el);
-      const resaltar = si => window.cvResaltar?.(si ? d.texto : null, d.chip);
-      el.addEventListener('pointerenter', () => resaltar(true)); el.addEventListener('pointerleave', () => resaltar(false));
-      el.addEventListener('click', () => { if (d.chip) d.chip.click(); else window.cvResaltar?.(d.texto, null, true); });
-      etiquetas.push({ el, w: 0, h: 0, x: 0, y: 0, ax: 0, ay: 0, k, n: todas.length });
+      // Botón (sólo para puntero: con teclado se usan los chips del panel, que abren la misma ficha)
+      const el = document.createElement('button'); el.type = 'button'; el.tabIndex = -1; el.className = 'etq ' + d.tipo; el.innerHTML = d.html; capaEtq.append(el);
+      const clave = 'etq:' + d.texto, resaltar = si => window.cvResaltar?.(si ? d.texto : null, d.chip);
+      el.addEventListener('pointerenter', () => resaltar(true));
+      el.addEventListener('pointerleave', () => { if (!el.hasAttribute('data-abierta')) resaltar(false); });
+      // Toque: la ficha de dónde la usé, anclada a la etiqueta; la frase de arriba queda resaltada mientras está abierta
+      el.addEventListener('click', () => window.cvFicha?.abrir({ li, nombre: d.texto, icono: d.chip?.querySelector('svg')?.outerHTML, terminos: d.tipo === 'herr' ? d.texto.split('·').map(x => x.trim()) : [d.texto], ancla: el, clave }));
+      etiquetas.push({ el, clave, resaltar, w: 0, h: 0, x: 0, y: 0, ax: 0, ay: 0, k, n: todas.length });
     });
     etiquetas.forEach(e => { e.w = e.el.offsetWidth; e.h = e.el.offsetHeight; });
     tCambio = performance.now(); rayosDibujo = 0;
   }
   document.addEventListener('idioma', armarEtiquetas);
+  // La etiqueta de la ficha abierta queda encendida (y su frase resaltada) hasta que la ficha se cierra
+  document.addEventListener('ficha-uso', e => etiquetas.forEach(x => { const si = e.detail === x.clave; if (x.el.hasAttribute('data-abierta') !== si) { x.el.toggleAttribute('data-abierta', si); x.resaltar(si); } }));
   function ubicarEtiquetas(ahora) {
     const fuerza = cur.park * cur.o, mostrar = enDesktop() && fuerza > .3;
     capaEtq.style.opacity = mostrar ? Math.min(1, (fuerza - .3) / .4).toFixed(2) : '0';

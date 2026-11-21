@@ -940,17 +940,78 @@ html[data-movimiento="off"] .estrellas i { animation:none!important; }
 
 /* ——— Rayos con contenido: etiquetas de herramientas y metodologías alrededor del ∞ (escritorio) ——— */
 .rayos-etq { position:fixed; inset:0; z-index:7; pointer-events:none; opacity:0; transition:opacity .35s ease; }
-.rayos-etq .etq { position:absolute; left:0; top:0; display:inline-flex; align-items:center; gap:7px; padding:7px 11px; border-radius:10px; white-space:nowrap; cursor:pointer;
-  font:500 .75rem/1 var(--mono); transform-origin:center; will-change:transform; pointer-events:auto;
-  transition:background .2s ease, color .2s ease, box-shadow .2s ease; }
+/* Etiquetas (pedido del dueño: «mejorá la calidad de los textos flotantes»): cápsula de vidrio con borde degradado del color
+   de la etapa, brillo interior arriba, sombra en dos capas teñida, ícono de 18 px y un punto que avisa que se puede tocar. */
+.rayos-etq .etq { position:absolute; left:0; top:0; display:inline-flex; align-items:center; gap:8px; min-height:34px; padding:0 12px 0 10px; margin:0;
+  border:1px solid transparent; border-radius:12px; white-space:nowrap; cursor:pointer; color:var(--tinta); font:500 .75rem/1 var(--mono); letter-spacing:.01em;
+  background:linear-gradient(180deg,rgb(22 25 44 / .9),rgb(10 12 22 / .92)) padding-box,
+    linear-gradient(135deg,color-mix(in oklab,var(--c) 95%,#fff),color-mix(in oklab,var(--c) 18%,transparent) 55%,color-mix(in oklab,var(--c) 60%,transparent)) border-box;
+  -webkit-backdrop-filter:blur(10px) saturate(150%); backdrop-filter:blur(10px) saturate(150%);
+  box-shadow:inset 0 1px 0 rgb(255 255 255 / .16), 0 1px 2px rgb(0 0 0 / .55), 0 12px 24px -14px color-mix(in oklab,var(--c) 75%,#000);
+  transform-origin:center; will-change:transform; pointer-events:auto;
+  transition:color .2s ease, box-shadow .25s ease, translate 500ms var(--resorte), scale 120ms ease; }
 .rayos-etq:not([data-visible]) .etq { pointer-events:none; }
-.rayos-etq .etq.herr { color:var(--tinta); background:rgb(14 16 28 / .86); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
-  box-shadow:inset 0 1px 0 rgb(255 255 255 / .1), inset 0 0 0 1px color-mix(in oklab,var(--c) 50%,transparent), 0 8px 18px -10px rgb(0 0 0 / .8); }
-.rayos-etq .etq.herr svg { width:15px; height:15px; fill:var(--c); flex:none; }
-.rayos-etq .etq.metodo { color:color-mix(in oklab,var(--c) 55%,#fff); background:color-mix(in oklab,var(--c) 14%,rgb(10 12 22 / .9)); letter-spacing:.06em; text-transform:uppercase; font-size:.6875rem;
-  box-shadow:inset 0 0 0 1px color-mix(in oklab,var(--c) 75%,transparent); }
-.rayos-etq .etq.metodo::before { content:""; width:6px; height:6px; flex:none; transform:rotate(45deg); background:var(--c); }
-.rayos-etq .etq:hover { color:#fff; background:color-mix(in oklab,var(--c) 34%,rgb(10 12 22 / .9)); box-shadow:inset 0 0 0 1px var(--c), 0 10px 24px -10px var(--c); }
+.rayos-etq .etq svg { width:18px; height:18px; flex:none; fill:var(--c); filter:drop-shadow(0 0 6px color-mix(in oklab,var(--c) 55%,transparent)); }
+.rayos-etq .etq::after { content:""; width:5px; height:5px; flex:none; margin-left:2px; border-radius:50%; background:var(--c); opacity:.55; box-shadow:0 0 6px var(--c); transition:opacity .2s ease, scale .3s var(--resorte); }
+.rayos-etq .etq.metodo { gap:9px; padding-left:12px; color:color-mix(in oklab,var(--c) 52%,#fff); font-size:.6875rem; letter-spacing:.09em; text-transform:uppercase;
+  background:linear-gradient(180deg,color-mix(in oklab,var(--c) 16%,rgb(16 18 32 / .92)),rgb(10 12 22 / .92)) padding-box,
+    linear-gradient(135deg,var(--c),color-mix(in oklab,var(--c) 25%,transparent) 60%,color-mix(in oklab,var(--c) 70%,transparent)) border-box; }
+.rayos-etq .etq.metodo::before { content:""; width:7px; height:7px; flex:none; rotate:45deg; background:var(--c); box-shadow:0 0 8px var(--c); }
+.rayos-etq .etq:hover, .rayos-etq .etq:focus-visible, .rayos-etq .etq[data-abierta] { color:#fff; translate:0 -2px;
+  box-shadow:inset 0 1px 0 rgb(255 255 255 / .24), 0 0 0 3px color-mix(in oklab,var(--c) 26%,transparent), 0 14px 30px -12px var(--c); }
+.rayos-etq .etq:hover::after, .rayos-etq .etq[data-abierta]::after { opacity:1; scale:1.5; }
+.rayos-etq .etq[data-abierta] { background:linear-gradient(180deg,color-mix(in oklab,var(--c) 34%,rgb(16 18 32 / .92)),color-mix(in oklab,var(--c) 14%,rgb(10 12 22 / .94))) padding-box,
+    linear-gradient(135deg,#fff,var(--c) 40%,var(--c)) border-box; }
+.rayos-etq .etq:active { scale:.97; transition-duration:100ms; }
+.rayos-etq .etq:focus-visible { outline:2px solid var(--c); outline-offset:3px; }
+
+/* ——— Ficha «dónde la usé»: globo anclado a la etiqueta (escritorio) u hoja desde abajo (celular y chips) ——— */
+.ficha-uso { position:fixed; z-index:40; width:min(360px,calc(100vw - 32px)); padding:14px 16px 16px; border:1px solid transparent; border-radius:16px; color:var(--tinta);
+  background:linear-gradient(180deg,rgb(20 23 40 / .95),rgb(10 12 22 / .97)) padding-box,
+    linear-gradient(140deg,var(--c),color-mix(in oklab,var(--c) 14%,transparent) 50%,color-mix(in oklab,var(--c) 55%,transparent)) border-box;
+  -webkit-backdrop-filter:blur(18px) saturate(150%); backdrop-filter:blur(18px) saturate(150%);
+  box-shadow:inset 0 1px 0 rgb(255 255 255 / .12), 0 2px 4px rgb(0 0 0 / .45), 0 26px 50px -18px rgb(0 0 0 / .9), 0 0 44px -20px var(--c);
+  opacity:0; translate:0 8px; scale:.97; transform-origin:var(--flecha,50%) 100%;
+  transition:opacity .2s ease, translate 450ms var(--resorte), scale 450ms var(--resorte); }
+.ficha-uso[data-abierta] { opacity:1; translate:0 0; scale:1; }
+.ficha-uso[hidden] { display:none; }
+.ficha-uso[data-lado="abajo"] { transform-origin:var(--flecha,50%) 0; translate:0 -8px; }
+.ficha-uso[data-lado="abajo"][data-abierta] { translate:0 0; }
+.ficha-uso header { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:11px; align-items:center; margin-bottom:12px; }
+.ficha-uso header b { display:block; font-weight:800; font-stretch:80%; font-size:1.15rem; line-height:1.05; text-transform:uppercase; overflow-wrap:anywhere; }
+.ficha-uso header small { display:block; margin-top:3px; font:500 .6875rem/1.3 var(--mono); letter-spacing:.08em; text-transform:uppercase; color:var(--c); }
+.fu-ico { display:grid; place-items:center; width:38px; height:38px; border-radius:11px; background:color-mix(in oklab,var(--c) 18%,transparent);
+  box-shadow:inset 0 1px 0 rgb(255 255 255 / .12), inset 0 0 0 1px color-mix(in oklab,var(--c) 50%,transparent); }
+.fu-ico svg { width:20px; height:20px; fill:var(--c); }
+.fu-rombo { width:10px; height:10px; rotate:45deg; background:var(--c); box-shadow:0 0 10px var(--c); }
+.fu-cerrar { display:grid; place-items:center; width:36px; height:36px; padding:0; border:0; border-radius:50%; cursor:pointer; color:var(--suave);
+  background:rgb(255 255 255 / .05); box-shadow:inset 0 0 0 1px rgb(255 255 255 / .08); transition:color .2s ease, background .2s ease, scale 120ms ease; }
+.fu-cerrar svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; }
+.fu-cerrar:hover { color:#fff; background:color-mix(in oklab,var(--c) 22%,transparent); }
+.fu-cerrar:active { scale:.94; }
+.fu-cerrar:focus-visible { outline:2px solid var(--c); outline-offset:2px; }
+.ficha-uso section + section { margin-top:12px; padding-top:12px; border-top:1px solid rgb(255 255 255 / .08); }
+.fu-donde { margin:0 0 5px; font:500 .6875rem/1.3 var(--mono); letter-spacing:.1em; text-transform:uppercase; color:color-mix(in oklab,var(--c) 70%,#fff); }
+.fu-titulo { margin:0 0 3px; font-weight:700; font-size:.9375rem; }
+.fu-frase { margin:0; font-size:.875rem; line-height:1.5; color:var(--suave); text-wrap:pretty; }
+.fu-frase + .fu-frase { margin-top:6px; }
+.ficha-uso mark { background:none; color:#fff; font-weight:600; box-shadow:inset 0 -.42em 0 color-mix(in oklab,var(--c) 38%,transparent); border-radius:2px; }
+.fu-nota { margin:10px 0 0; font:400 .6875rem/1.4 var(--mono); color:var(--suave); }
+/* Flecha del globo: apunta a la etiqueta */
+.ficha-uso[data-modo="globo"]::after { content:""; position:absolute; left:calc(var(--flecha,50%) - 7px); width:14px; height:14px; rotate:45deg;
+  background:rgb(11 13 24); border:1px solid color-mix(in oklab,var(--c) 55%,transparent); }
+.ficha-uso[data-lado="arriba"]::after { bottom:-8px; border-top-color:transparent; border-left-color:transparent; }
+.ficha-uso[data-lado="abajo"]::after { top:-8px; border-bottom-color:transparent; border-right-color:transparent; }
+/* Hoja: abajo y a todo el ancho en el celular (sobre el dock); centrada en escritorio */
+.ficha-uso[data-modo="hoja"] { left:12px; right:12px; bottom:calc(max(12px,env(safe-area-inset-bottom)) + 6px); width:auto; max-height:62svh; overflow:auto; translate:0 28px; transform-origin:50% 100%; }
+.ficha-uso[data-modo="hoja"][data-abierta] { translate:0 0; }
+@media (min-width:861px) {
+  .ficha-uso[data-modo="hoja"] { left:50%; right:auto; width:min(460px,calc(100vw - 32px)); translate:-50% 28px; }
+  .ficha-uso[data-modo="hoja"][data-abierta] { translate:-50% 0; }
+}
+@media (prefers-reduced-motion:reduce) { .ficha-uso, .rayos-etq .etq { transition:none; } }
+:root[data-movimiento="off"] :is(.ficha-uso, .rayos-etq .etq) { transition:none; }
+@media print { .ficha-uso { display:none!important; } }
 /* En escritorio las herramientas están en los rayos: el panel las conserva sólo para lectores de pantalla y para el resaltado */
 @media (min-width:861px) { .tray-pasos .herramientas { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; } }
 .tray-pasos .practica[data-menciona] { box-shadow:inset 0 0 0 1px var(--c), 0 0 0 4px color-mix(in oklab,var(--c) 18%,transparent); }

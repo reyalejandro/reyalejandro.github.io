@@ -598,12 +598,15 @@ document.addEventListener('idioma', iconizar);
       h.addEventListener('focus', () => { if (!fija) mostrar(h); });
       h.addEventListener('pointerleave', () => { if (!fija) mostrar(null); });
       h.addEventListener('blur', () => { if (!fija) mostrar(null); });
-      const tocar = () => {
+      const tocar = teclado => {
         fija = fija === h ? null : h; chips.forEach(c => c.setAttribute('aria-pressed', String(c === fija)));
         mostrar(fija || h); sonar('click', { tono: 1.5, vol: .2 });
+        // También abre la ficha de dónde la usé (hoja desde abajo); un segundo toque la cierra
+        const nombre = h.textContent.trim();
+        window.cvFicha?.abrir({ li, nombre, icono: $('svg', h)?.outerHTML, terminos: nombre.split('·').map(x => x.trim()), ancla: null, teclado, clave: 'chip:' + nombre });
       };
-      h.addEventListener('click', tocar);
-      h.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tocar(); } });
+      h.addEventListener('click', e => tocar(e.detail === 0));
+      h.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tocar(true); } });
     });
   });
 })();
@@ -1032,6 +1035,73 @@ const iconoPestana = (() => {
 })();
 
 // ——— PDF flotante: aparece después de la portada (en el celular desde el comienzo), se esconde en el ciclo fijo y en el contacto (ya tiene el suyo) y su anillo marca cuánto se leyó ———
+// ——— Ficha «dónde la usé» (pedido del dueño: «que al tocarlos tenga la descripción de dónde se usaron»). La abren las
+// etiquetas que rodean al ∞ (globo anclado a la etiqueta, en escritorio) y los chips de herramientas de la etapa (hoja que
+// sube desde abajo, sobre todo en el celular). El contenido sale del texto de la etapa: las frases donde aparece el término,
+// separadas por empresa y con el término marcado; si no aparece literal, la buena práctica de la etapa o el texto de la etapa.
+(function fichaUso() {
+  const ficha = document.createElement('div');
+  ficha.className = 'ficha-uso'; ficha.id = 'ficha-uso'; ficha.hidden = true;
+  ficha.setAttribute('role', 'dialog'); ficha.setAttribute('aria-labelledby', 'ficha-uso-t');
+  document.body.append(ficha);
+  const sinTildes = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const marcar = (frase, terminos) => {
+    let h = esc(frase);
+    for (const t of terminos) h = h.replace(new RegExp(`(${esc(t).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'), '<mark>$1</mark>');
+    return h;
+  };
+  function usos(li, terminos) {
+    const claves = terminos.map(sinTildes), tiene = txt => claves.some(c => sinTildes(txt).includes(c));
+    const lista = [];
+    $$('dl dt', li).forEach(dt => {
+      const dd = dt.nextElementSibling; if (!dd) return;
+      const frases = dd.textContent.trim().split(/(?<=[.;])\s+/).filter(tiene);
+      if (frases.length) lista.push({ donde: dt.textContent.trim(), frases });
+    });
+    if (lista.length) return lista;
+    const pr = $('.practica', li);
+    if (pr && tiene(pr.textContent)) return [{ donde: $('.practica-et', pr)?.textContent.trim(), titulo: $('h4', pr)?.textContent.trim(), frases: [$('h4 + p', pr)?.textContent.trim()] }];
+    return $$('dl dt', li).map(dt => ({ donde: dt.textContent.trim(), frases: [dt.nextElementSibling?.textContent.trim()], general: true }));
+  }
+  let abierta = null, origen = null;
+  function abrir({ li, nombre, icono, terminos, ancla, teclado, clave }) {
+    if (abierta === clave && !ficha.hidden) { cerrar(); return; }
+    const lista = usos(li, terminos);
+    ficha.style.setProperty('--c', li.style.getPropertyValue('--c'));
+    ficha.innerHTML = `<header><span class="fu-ico">${icono || '<i class="fu-rombo"></i>'}</span>`
+      + `<div><b id="ficha-uso-t">${esc(nombre)}</b><small>${esc($('.etiqueta', li)?.textContent.trim())} · ${esc($('h3', li)?.textContent.trim())}</small></div>`
+      + `<button type="button" class="fu-cerrar" aria-label="${t('Cerrar', 'Close')}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></header>`
+      + lista.map(u => `<section><p class="fu-donde">${esc(u.donde)}</p>${u.titulo ? `<p class="fu-titulo">${esc(u.titulo)}</p>` : ''}${u.frases.map(f => `<p class="fu-frase">${marcar(f, terminos)}</p>`).join('')}</section>`).join('')
+      + (lista[0]?.general ? `<p class="fu-nota">${t('Herramienta de esta etapa del ciclo', 'Tool used in this stage of the loop')}</p>` : '');
+    $('.fu-cerrar', ficha).addEventListener('click', cerrar);
+    ficha.removeAttribute('data-abierta'); ficha.hidden = false;
+    const globo = !!ancla && innerWidth > 860;
+    ficha.dataset.modo = globo ? 'globo' : 'hoja';
+    if (globo) {
+      const r = ancla.getBoundingClientRect(), w = ficha.offsetWidth, h = ficha.offsetHeight, centro = r.left + r.width / 2;
+      const arriba = r.top - h - 16 > 12, x = Math.min(Math.max(centro - w / 2, 16), innerWidth - w - 16);
+      ficha.style.left = x + 'px'; ficha.style.top = Math.max(12, Math.min(arriba ? r.top - h - 16 : r.bottom + 16, innerHeight - h - 12)) + 'px';
+      ficha.style.setProperty('--flecha', Math.min(Math.max(centro - x, 24), w - 24) + 'px'); ficha.dataset.lado = arriba ? 'arriba' : 'abajo';
+    } else { ficha.style.left = ficha.style.top = ''; delete ficha.dataset.lado; }
+    requestAnimationFrame(() => ficha.toggleAttribute('data-abierta', true));
+    abierta = clave; origen = teclado ? document.activeElement : null;
+    if (teclado) $('.fu-cerrar', ficha).focus({ preventScroll: true });
+    sonar('click', { tono: 1.8, vol: .22 });
+    document.dispatchEvent(new CustomEvent('ficha-uso', { detail: clave }));
+  }
+  function cerrar() {
+    if (ficha.hidden) return;
+    ficha.hidden = true; ficha.removeAttribute('data-abierta'); abierta = null;
+    origen?.focus?.({ preventScroll: true }); origen = null;
+    document.dispatchEvent(new CustomEvent('ficha-uso', { detail: null }));
+  }
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrar(); });
+  document.addEventListener('pointerdown', e => { if (!ficha.hidden && !ficha.contains(e.target) && !e.target.closest('.rayos-etq .etq, .herramientas li')) cerrar(); });
+  document.addEventListener('etapa', cerrar); document.addEventListener('idioma', cerrar); addEventListener('resize', cerrar);
+  window.cvFicha = { abrir, cerrar };
+})();
+
 // ——— Botón para volver arriba: aparece después de la primera pantalla; con movimiento reducido salta sin animar ———
 (function subir() {
   const bot = $('[data-subir]'); if (!bot) return;
