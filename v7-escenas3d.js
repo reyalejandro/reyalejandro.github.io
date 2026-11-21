@@ -259,7 +259,8 @@ if (cajas.length) try {
     const cinta = new THREE.Mesh(caja3(.64, .53, .12, .02), M.cinta()); paquete.add(cinta);
     const carteles = CLAVES.map(c => caja.querySelector(`[data-ancla="${c}"]`));
     let prog = 0, meta = 0, t = 0, estado = -1;
-    const objetivo = () => { const r = caja.getBoundingClientRect(), H = innerHeight; return Math.min(1, Math.max(0, (H * .9 - r.top) / (H * .78))); };
+    // En Experiencia en diapositivas el paso marca el progreso (data-progreso); si no, la posición de la escena en pantalla
+    const objetivo = () => { if (caja.dataset.progreso !== undefined) return +caja.dataset.progreso; const r = caja.getBoundingClientRect(), H = innerHeight; return Math.min(1, Math.max(0, (H * .9 - r.top) / (H * .78))); };
     const colocar = () => {
       corre.position.z = prog * viaje;
       let pasados = 0;

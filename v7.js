@@ -776,7 +776,7 @@ if (matchMedia('(hover:hover) and (pointer:fine)').matches) {
 // ——— Retoques del 20/11 (tabla de retoques de design-unslopify): luz que sigue al puntero en las tarjetas, inclinación con
 // resorte, onda desde el toque en los controles y el tinte de la sección como variable CSS (barra de lectura, selección, luces). ———
 (function retoques() {
-  if (matchMedia('(hover:hover) and (pointer:fine)').matches) $$('.pase, .entrada, .acto').forEach(el => {
+  if (matchMedia('(hover:hover) and (pointer:fine)').matches) $$('.pase, .entrada').forEach(el => { // .acto ya no: sin borde, la luz dejaba un rectángulo de bordes duros
     const inclina = el.classList.contains('pase'); // .entrada ya anima su transform con el scroll
     el.addEventListener('pointermove', e => {
       const r = el.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
@@ -809,10 +809,12 @@ if (matchMedia('(hover:hover) and (pointer:fine)').matches) {
       `<button type="button" class="acto-etapa" style="--c:${x.c}" data-i="${x.i}" aria-pressed="${k === 0}"><span class="etapa-n">${String(x.i + 1).padStart(2, '0')}</span>${x.n}</button>`).join('')}</div>` +
       `<p class="acto-detalle" aria-live="polite"></p>`;
     const detalle = $('.acto-detalle', caja), bts = $$('.acto-etapa', caja);
-    const mostrar = k => {
+    let elegida = 0;
+    const mostrar = (k, quieta) => {
+      elegida = k = Math.min(k, bts.length - 1);
       bts.forEach((b, j) => b.setAttribute('aria-pressed', String(j === k)));
       detalle.style.setProperty('--c', items[k].c); detalle.innerHTML = items[k].texto;
-      if (!quieto()) { detalle.removeAttribute('data-entra'); void detalle.offsetWidth; detalle.toggleAttribute('data-entra', true); }
+      if (!quieto() && !quieta) { detalle.removeAttribute('data-entra'); void detalle.offsetWidth; detalle.toggleAttribute('data-entra', true); }
     };
     bts.forEach((b, k) => {
       b.addEventListener('pointerenter', () => mostrar(k)); b.addEventListener('focus', () => mostrar(k));
@@ -822,9 +824,119 @@ if (matchMedia('(hover:hover) and (pointer:fine)').matches) {
       const k = bts.indexOf(document.activeElement), d = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
       if (k < 0 || !d) return; e.preventDefault(); bts[(k + d + bts.length) % bts.length].focus();
     });
+    // Las diapositivas de Experiencia llevan la etapa elegida de una empresa a la otra
+    acto.cvMostrar = mostrar; acto.cvIndice = () => elegida;
     mostrar(0);
   });
   document.addEventListener('idioma', armar); // después de iconizar, así el detalle trae los íconos
+})();
+
+// ——— Experiencia en diapositivas conectadas (pedido del dueño, 21/11: «Master Pet y Tsoft conectados como en diapositivas
+// con animaciones custom de design-unslopify, ya que ambas tienen muchos parecidos»). Prompts: E023 (sección fija y medio
+// que cambia), E016 (título split-flap), E024 (línea que se dibuja entre las dos) y E021 (contador). Lo común queda quieto:
+// las 8 etapas no se mueven y la etapa elegida pasa de una empresa a la otra, así se comparan. En Tsoft, cada rueda lleva el
+// paquete del pipeline al siguiente gate. Sólo con pantalla grande y movimiento; si no, todo apilado como antes. ———
+(function experienciaSlides() {
+  const sec = $('#lineup'), actos = $$('#lineup [data-empresa]'), envoltura = $('#lineup > .envoltura');
+  const pipe = $('#lineup [data-escena="pipeline"]'); if (!sec || actos.length !== 2 || !envoltura) return;
+  // Pasos: 0 Master Pet · 1 Tsoft (paquete antes del primer gate) · 2–5 el paquete pasa cada gate
+  const PROGRESO = [0, 0, .25, .49, .73, 1], N = PROGRESO.length, TRANSICION = 1100;
+  const linea = document.createElement('div'); linea.className = 'exp-linea'; linea.setAttribute('aria-hidden', 'true');
+  const nodo = a => `<span class="exp-nodo"><b>${esc(a.querySelector('.acto-nombre').textContent)}</b><small>${esc(a.querySelector('.acto-datos time')?.closest('span')?.textContent.trim() || '')}</small></span>`;
+  const armarLinea = () => { linea.innerHTML = `<span class="exp-cuenta"><b>01</b> / 02</span>${nodo(actos[0])}<svg viewBox="0 0 400 24" preserveAspectRatio="none"><path class="exp-base" d="M2 18 C 110 18, 150 6, 200 12 S 300 6, 398 6" pathLength="1"/><path class="exp-traza" d="M2 18 C 110 18, 150 6, 200 12 S 300 6, 398 6" pathLength="1"/></svg>${nodo(actos[1])}`; };
+  function esc(s) { return String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
+  armarLinea(); envoltura.querySelector('.capitulo-cabeza')?.after(linea); document.addEventListener('idioma', armarLinea);
+  let activo = false, pedido = false, meta = 0, empresa = 0, pos = 0, desde = 0, t0 = 0, animando = false;
+  const puede = () => innerWidth >= 900 && innerHeight >= 620 && !quieto();
+  const recorrido = () => Math.max(1, sec.offsetHeight - innerHeight);
+  const inicio = () => sec.getBoundingClientRect().top + scrollY;
+  const lugar = i => inicio() + recorrido() * i / (N - 1);
+  const fija = () => { const r = sec.getBoundingClientRect(); return r.top <= 1 && r.bottom >= innerHeight - 1; };
+  const curva = t => t < .5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2;
+  const partes = a => [a.querySelector('.acto-datos'), a.querySelector('.acto-resumen'), a.querySelector('.acto-detalle')].filter(Boolean);
+  const medio = a => a.querySelector('figure');
+  // Título split-flap (E016): cada letra parte de la del nombre anterior, gira entre letras al azar y cae en la nueva
+  const LETRAS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  function voltear(h, previo) {
+    const final = h.textContent, largo = Math.max(final.length, previo.length);
+    if (quieto()) return;
+    h.classList.add('volteando');
+    h.innerHTML = Array.from({ length: largo }, (_, i) => `<span class="ficha-l">${previo[i] && previo[i] !== ' ' ? previo[i] : '&nbsp;'}</span>`).join('');
+    const fichas = [...h.children];
+    let listas = 0;
+    fichas.forEach((f, i) => {
+      const destino = final[i] && final[i] !== ' ' ? final[i] : ' ', vueltas = 3 + Math.floor(Math.random() * 6);
+      let k = 0;
+      const paso = () => {
+        k++;
+        const ultima = k > vueltas;
+        f.textContent = ultima ? (destino === ' ' ? ' ' : destino) : LETRAS[Math.random() * 26 | 0];
+        f.animate([{ transform: 'rotateX(-80deg)', opacity: .4 }, { transform: 'rotateX(0)', opacity: 1 }], { duration: 90, easing: 'ease-out' });
+        if (!ultima) setTimeout(paso, 70); else if (++listas === fichas.length) setTimeout(() => { h.textContent = final; h.classList.remove('volteando'); }, 120);
+      };
+      setTimeout(paso, 120 + i * 30);
+    });
+  }
+  // Cambio de empresa: sale lo de una (sube y se apaga, escalonado), entra lo de la otra (desde abajo); el medio cambia
+  // con fundido y una cortina (clip-path); el título voltea; las etapas quedan y heredan la etapa elegida.
+  function mostrarEmpresa(nueva, instantaneo) {
+    const vieja = actos[empresa], llega = actos[nueva];
+    if (nueva === empresa && !instantaneo) return;
+    const k = vieja.cvIndice?.() ?? 0; llega.cvMostrar?.(k, true);
+    actos.forEach(a => a.toggleAttribute('data-activo', a === llega));
+    linea.querySelector('.exp-cuenta b').textContent = String(nueva + 1).padStart(2, '0');
+    linea.dataset.n = nueva;
+    if (!instantaneo && !quieto()) {
+      vieja.toggleAttribute('data-sale', true); setTimeout(() => vieja.removeAttribute('data-sale'), 480);
+      partes(vieja).forEach((el, i) => el.animate([{ transform: 'none', opacity: 1 }, { transform: 'translateY(-22px)', opacity: 0 }], { duration: 320, delay: i * 40, easing: 'cubic-bezier(.4,0,1,1)', fill: 'backwards' }));
+      partes(llega).forEach((el, i) => el.animate([{ transform: 'translateY(26px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 520, delay: 260 + i * 70, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'backwards' }));
+      const mv = medio(vieja), ml = medio(llega);
+      mv?.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.96)' }], { duration: 380, easing: 'ease-in', fill: 'backwards' });
+      ml?.animate([{ opacity: 0, clipPath: nueva > empresa ? 'inset(0 0 0 100%)' : 'inset(0 100% 0 0)', transform: 'scale(1.04)' }, { opacity: 1, clipPath: 'inset(0 0 0 0)', transform: 'none' }], { duration: 700, delay: 220, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'backwards' });
+      voltear(llega.querySelector('.acto-nombre'), vieja.querySelector('.acto-nombre').textContent);
+    }
+    empresa = nueva;
+  }
+  const animar = ahora => {
+    const t = Math.min(1, (ahora - t0) / TRANSICION); pos = desde + (meta - desde) * curva(t);
+    linea.style.setProperty('--p', Math.min(1, pos).toFixed(3));
+    if (t < 1) requestAnimationFrame(animar); else animando = false;
+  };
+  function pintar() {
+    pedido = false; if (!activo) return;
+    const p = Math.min(1, Math.max(0, -sec.getBoundingClientRect().top / recorrido()));
+    const n = Math.round(p * (N - 1));
+    if (n !== meta) {
+      meta = n; desde = pos; t0 = performance.now(); if (!animando) { animando = true; requestAnimationFrame(animar); }
+      mostrarEmpresa(n === 0 ? 0 : 1); if (fija()) tic(1.2 + n * .15);
+      if (pipe) pipe.dataset.progreso = PROGRESO[n];
+    }
+  }
+  function medir() {
+    const ya = puede();
+    if (ya !== activo) {
+      activo = ya; sec.toggleAttribute('data-exp-activo', ya);
+      if (ya) { mostrarEmpresa(0, true); if (pipe) pipe.dataset.progreso = 0; meta = 0; pos = 0; linea.style.setProperty('--p', 0); }
+      else { actos.forEach(a => a.removeAttribute('data-activo')); if (pipe) delete pipe.dataset.progreso; }
+    }
+    pedir();
+  }
+  // Rueda: dentro de la sección fija, un paso de rueda = un paso. En el primero y el último, la rueda sale de la sección.
+  let acumulado = 0, bloqueo = 0;
+  addEventListener('wheel', e => {
+    if (!activo || e.ctrlKey || !fija() || Math.abs(e.deltaX) > Math.abs(e.deltaY)) { acumulado = 0; return; }
+    const destino = meta + Math.sign(e.deltaY);
+    if (destino < 0) { e.preventDefault(); scrollTo({ top: inicio() - 2, behavior: 'instant' }); return; }
+    if (destino > N - 1) { e.preventDefault(); scrollTo({ top: inicio() + recorrido() + 2, behavior: 'instant' }); return; }
+    e.preventDefault();
+    const ahora = performance.now(); acumulado += Math.abs(e.deltaY);
+    if (ahora < bloqueo || acumulado < 40) return;
+    acumulado = 0; bloqueo = ahora + (destino <= 1 && meta <= 1 ? 800 : 450);
+    scrollTo({ top: lugar(destino), behavior: 'instant' });
+  }, { passive: false });
+  const pedir = () => { if (!pedido) { pedido = true; requestAnimationFrame(pintar); } };
+  addEventListener('scroll', pedir, { passive: true }); addEventListener('resize', medir); document.addEventListener('movimiento', medir);
+  medir();
 })();
 
 // ——— Celular: los esquemas que se deslizan de costado arrancan centrados (la arquitectura tiene la API en el medio) ———
