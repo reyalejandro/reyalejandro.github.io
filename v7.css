@@ -1069,8 +1069,8 @@ html[data-vivo] .tray-pasos > li { grid-area:1/1; position:relative; inset:auto;
   .trayectoria .tray-marco { padding-bottom:calc(72px + env(safe-area-inset-bottom)); }
   .tray-pasos::before { inset:-16px -8%; }
 }
-/* Celulares bajos (667 px, iPhone SE): el texto más largo pisaba el ∞. Todo un escalón más compacto. */
-@media (max-width:860px) and (max-height:720px) {
+/* Celulares de hasta 860 px de alto (con las barras del navegador, casi todos): el texto más largo (Deploy) pisaba el ∞. Todo un escalón más compacto. */
+@media (max-width:860px) and (max-height:860px) {
   .trayectoria .tray-marco { padding-top:14px; gap:6px; }
   .trayectoria .tray-cabeza .titulo { font-size:1.5rem; }
   .tray-pasos .etapa-datos h3 { font-size:1.6rem; }
