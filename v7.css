@@ -1316,3 +1316,9 @@ html:not([data-tres]) .ver-todo { display:none; } /* sin 3D no hay ∞ que mostr
 @media (max-width:860px) { .ver-todo { min-height:32px; padding:0 10px; gap:6px; font-size:.6875rem; margin:0 0 4px; } .ver-todo svg { width:15px; height:15px; } }
 @media (max-width:860px) and (any-pointer:coarse) { .ver-todo { min-height:40px; } }
 @media print { .ver-todo { display:none!important; } }
+
+/* Ficha de un grupo de prácticas: sus nombres como fichitas arriba */
+.fu-chips { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 12px; padding:0; list-style:none; }
+.fu-chips li { display:inline-flex; align-items:center; gap:6px; padding:4px 9px; border-radius:8px; font:500 .6875rem/1.2 var(--mono); letter-spacing:.06em; text-transform:uppercase;
+  color:color-mix(in oklab,var(--c) 55%,#fff); background:color-mix(in oklab,var(--c) 14%,transparent); box-shadow:inset 0 0 0 1px color-mix(in oklab,var(--c) 45%,transparent); }
+.fu-chips li::before { content:""; width:6px; height:6px; rotate:45deg; background:var(--c); }

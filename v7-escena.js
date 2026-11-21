@@ -73,15 +73,19 @@ try {
     const herramientas = [...li.querySelectorAll('.herramientas li')].map(c => ({ html: c.innerHTML, texto: c.textContent.trim(), tipo: 'herr', chip: c }));
     const metodos = (li.dataset.metodos || '').split('|').filter(Boolean).map(m => { const [es, enTxt] = m.split('::'); const tx = en ? enTxt : es; return { html: tx, texto: tx, tipo: 'metodo' }; });
     // Se intercalan para que herramientas y prácticas se repartan por todo el abanico
-    const todas = []; for (let i = 0; i < Math.max(herramientas.length, metodos.length); i++) { if (herramientas[i]) todas.push(herramientas[i]); if (metodos[i]) todas.push(metodos[i]); }
+    // Hasta 8 etiquetas: si la etapa tiene más, las prácticas van juntas en una sola («4 prácticas») que abre la ficha con
+    // todas; con tantas palabras alrededor del ∞ la escena se llenaba. Si entran, se intercalan para repartirse por el abanico.
+    const MAX = 8, todas = [];
+    if (herramientas.length + metodos.length <= MAX) { for (let i = 0; i < Math.max(herramientas.length, metodos.length); i++) { if (herramientas[i]) todas.push(herramientas[i]); if (metodos[i]) todas.push(metodos[i]); } }
+    else { todas.push(...herramientas); if (metodos.length) todas.push({ html: `${metodos.length} ${en ? 'practices' : 'prácticas'}`, texto: metodos.map(m => m.texto).join(' · '), tipo: 'metodo', grupo: metodos.map(m => m.texto), nombre: en ? 'Practices in this stage' : 'Prácticas de la etapa' }); }
     todas.forEach((d, k) => {
       // Botón (sólo para puntero: con teclado se usan los chips del panel, que abren la misma ficha)
       const el = document.createElement('button'); el.type = 'button'; el.tabIndex = -1; el.className = 'etq ' + d.tipo; el.innerHTML = d.html; capaEtq.append(el);
-      const clave = 'etq:' + d.texto, resaltar = si => window.cvResaltar?.(si ? d.texto : null, d.chip);
+      const clave = 'etq:' + d.texto, resaltar = si => { if (!d.grupo) window.cvResaltar?.(si ? d.texto : null, d.chip); };
       el.addEventListener('pointerenter', () => resaltar(true));
       el.addEventListener('pointerleave', () => { if (!el.hasAttribute('data-abierta')) resaltar(false); });
       // Toque: la ficha de dónde la usé, anclada a la etiqueta; la frase de arriba queda resaltada mientras está abierta
-      el.addEventListener('click', () => window.cvFicha?.abrir({ li, nombre: d.texto, icono: d.chip?.querySelector('svg')?.outerHTML, terminos: d.tipo === 'herr' ? d.texto.split('·').map(x => x.trim()) : [d.texto], ancla: el, clave }));
+      el.addEventListener('click', () => window.cvFicha?.abrir({ li, nombre: d.nombre || d.texto, icono: d.chip?.querySelector('svg')?.outerHTML, terminos: d.grupo || (d.tipo === 'herr' ? d.texto.split('·').map(x => x.trim()) : [d.texto]), grupo: d.grupo, ancla: el, clave }));
       etiquetas.push({ el, clave, resaltar, w: 0, h: 0, x: 0, y: 0, ax: 0, ay: 0, k, n: todas.length });
     });
     etiquetas.forEach(e => { e.w = e.el.offsetWidth; e.h = e.el.offsetHeight; });
@@ -253,9 +257,11 @@ try {
     if (!arrastre) { giro += vel; vel *= .9; incl *= .96; }
     rayo = Math.min(1, rayo + dt / .65);
     const vueltas = Math.round(giro / (Math.PI * 2)) * Math.PI * 2;
-    // En el ciclo el ∞ queda casi de frente (para leer los tramos) y apenas se mece con el mouse.
-    const ry = (giro + nx * .22 * mouse) * (1 - wt) + wt * (vueltas + nx * .08 * mouse);
-    const rx = (.2 + incl + ny * .14 * mouse) * (1 - wt) + wt * (.18 - ny * .05 * mouse);
+    // En el ciclo el ∞ queda de frente, para leer los tramos.
+    // En el ciclo el ∞ queda quieto (sin seguir al mouse): las etiquetas cuelgan del tramo y se corrían justo cuando el
+    // puntero iba a tocarlas (pedido del dueño). En la portada sigue al mouse.
+    const ry = (giro + nx * .22 * mouse) * (1 - wt) + wt * vueltas;
+    const rx = (.2 + incl + ny * .14 * mouse) * (1 - wt) + wt * .18;
     const px = o.x + nx * .1 * mouse * o.w.portada, py = o.y - ny * .07 * mouse * o.w.portada;
     // Sólo se vuelve a dibujar el 3D si algo se movió: con la página quieta la GPU descansa.
     let cambio = rayo < 1 || !!arrastre || Math.abs(vel) > 1e-4 || Math.abs(incl) > 1e-4;

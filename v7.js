@@ -1066,13 +1066,14 @@ const iconoPestana = (() => {
     return $$('dl dt', li).map(dt => ({ donde: dt.textContent.trim(), frases: [dt.nextElementSibling?.textContent.trim()], general: true }));
   }
   let abierta = null, origen = null;
-  function abrir({ li, nombre, icono, terminos, ancla, teclado, clave }) {
+  function abrir({ li, nombre, icono, terminos, ancla, teclado, clave, grupo }) {
     if (abierta === clave && !ficha.hidden) { cerrar(); return; }
     const lista = usos(li, terminos);
     ficha.style.setProperty('--c', li.style.getPropertyValue('--c'));
     ficha.innerHTML = `<header><span class="fu-ico">${icono || '<i class="fu-rombo"></i>'}</span>`
       + `<div><b id="ficha-uso-t">${esc(nombre)}</b><small>${esc($('.etiqueta', li)?.textContent.trim())} · ${esc($('h3', li)?.textContent.trim())}</small></div>`
       + `<button type="button" class="fu-cerrar" aria-label="${t('Cerrar', 'Close')}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></header>`
+      + (grupo ? `<ul class="fu-chips">${grupo.map(g => `<li>${esc(g)}</li>`).join("")}</ul>` : "")
       + lista.map(u => `<section><p class="fu-donde">${esc(u.donde)}</p>${u.titulo ? `<p class="fu-titulo">${esc(u.titulo)}</p>` : ''}${u.frases.map(f => `<p class="fu-frase">${marcar(f, terminos)}</p>`).join('')}</section>`).join('')
       + (lista[0]?.general ? `<p class="fu-nota">${t('Herramienta de esta etapa del ciclo', 'Tool used in this stage of the loop')}</p>` : '');
     $('.fu-cerrar', ficha).addEventListener('click', cerrar);
