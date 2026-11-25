@@ -101,6 +101,8 @@ try {
     if (!mostrar || !etiquetas.length) return false;
     // Zona libre: entre el texto de la etapa (arriba) y el espectro (abajo), a todo el ancho
     const panel = document.querySelector('.tray-pasos')?.getBoundingClientRect(), espectro = document.querySelector('.espectro')?.getBoundingClientRect();
+    // El botón «Ciclo completo» queda abajo a la derecha: las etiquetas tampoco bajan hasta él
+    const botonC = document.querySelector('[data-ver-todo]'), bc = botonC?.offsetParent ? botonC.getBoundingClientRect() : null;
     const minX = 16, maxX = innerWidth - 16, minY = (panel ? panel.bottom : 0) + 6, maxY = (espectro ? espectro.top : innerHeight) - 10;
     const vivo = !quieto();
     // Con el zoom, el tramo activo ocupa el centro de la zona: las etiquetas lo rodean en un óvalo ancho (la zona es baja y
@@ -117,9 +119,15 @@ try {
     const bIzq = Math.min(...todo.map(q => q.x)) - margen, bDer = Math.max(...todo.map(q => q.x)) + margen;
     const anchoMax = Math.max(...etiquetas.map(e => e.w)) + 34, columnas = bIzq - minX >= anchoMax && maxX - bDer >= anchoMax;
     const lado = [[], []]; etiquetas.forEach((e, k) => lado[k % 2].push(e));
+    const enArco = cz < .5, anchoE = Math.max(...etiquetas.map(e => e.w)), altoE = Math.max(...etiquetas.map(e => e.h));
+    const rxA = Math.min((maxX - minX) / 2 - anchoE / 2 - 10, 600), ryA = Math.max(50, c2.y - minY - altoE / 2 - 6);
     etiquetas.forEach((e, k) => {
       const extra = (k % 2) * 40; // escalonadas, para que las vecinas no queden en fila
-      if (columnas) {
+      if (enArco) {
+        // Arco de izquierda a derecha por encima del tramo; las pares un poco más adentro, para que no queden en fila
+        const th = Math.PI + (k + .5) / n * Math.PI, adentro = (k % 2) * .16;
+        e.x = c2.x + Math.cos(th) * rxA * (1 - adentro * .6) - e.w / 2; e.y = c2.y + Math.sin(th) * ryA * (1 - adentro) - e.h / 2;
+      } else if (columnas) {
         const grupoLado = lado[k % 2], i = grupoLado.indexOf(e), m = grupoLado.length, corrimiento = (i % 2) * 30;
         e.y = minY + (i + .5) / m * alto - e.h / 2;
         e.x = k % 2 ? bDer + corrimiento : bIzq - corrimiento - e.w;
@@ -134,7 +142,11 @@ try {
     });
     // Se separan las que se pisan (unas pasadas alcanzan) y se mantienen dentro de la zona libre
     for (let pasada = 0; pasada < 10; pasada++) {
-      for (const e of etiquetas) { e.x = Math.min(Math.max(e.x, minX), maxX - e.w); e.y = Math.min(Math.max(e.y, minY), maxY - e.h); }
+      for (const e of etiquetas) {
+        e.x = Math.min(Math.max(e.x, minX), maxX - e.w); e.y = Math.min(Math.max(e.y, minY), maxY - e.h);
+        // Sólo las que caen sobre el botón «Ciclo completo» lo esquivan subiendo
+        if (bc && e.x + e.w > bc.left - 8 && e.x < bc.right + 8 && e.y + e.h > bc.top - 8) e.y = bc.top - 8 - e.h;
+      }
       for (let i = 0; i < etiquetas.length; i++) for (let j = i + 1; j < etiquetas.length; j++) {
         const a = etiquetas[i], b = etiquetas[j], sx = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x) + 8, sy = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y) + 6;
         if (sx > 0 && sy > 0) { if (sy < sx) { const m = sy / 2 * Math.sign((b.y - a.y) || 1); a.y -= m; b.y += m; } else { const m = sx / 2 * Math.sign((b.x - a.x) || 1); a.x -= m; b.x += m; } }
@@ -300,19 +312,25 @@ try {
     if (cur.park > .002) {
       const panel = textoCiclo?.getBoundingClientRect(), pie = espectroCiclo?.getBoundingClientRect(), u = unidad();
       const col = enDesktop() ? columnaEtq() : 0, izqZ = 16 + col, derZ = innerWidth - 16 - col;
+      // Con zoom (pedido del dueño, 23/11): el tramo baja a la parte de abajo de la zona y deja arriba el aire para sus
+      // herramientas y prácticas, que se abren en arco sobre él. En la vista completa y en el celular sigue centrado.
+      const BANDA = enDesktop() ? .42 : 0;
       // En el celular el botón «Ciclo completo» queda abajo a la derecha de la zona: el ∞ no se mete debajo
       const boton = !enDesktop() && botonTodo?.offsetParent ? botonTodo.getBoundingClientRect() : null;
       const tope = (panel ? panel.bottom : 0) + 8, piso = Math.min(pie ? pie.top : innerHeight, boton ? boton.top : Infinity) - 8;
       const zW = Math.max(80, derZ - izqZ), zH = Math.max(80, piso - tope), px1 = cur.s / u;
       const zEntero = Math.min(zW / (6.7 * px1), zH / (2.95 * px1)), ext = piezas[activa].userData.ext;
-      const zTramo = Math.max(zEntero, Math.min(zW * VUELO.encuadre / (ext.w * px1), zH * .95 / (ext.h * px1)));
+      const topeT = tope + (piso - tope) * BANDA, zHT = Math.max(80, piso - topeT), zWT = innerWidth - 32;
+      // .8 del alto: la pieza inclinada y su funda de color ocupan algo más que su medida plana (rozaba el espectro en «Operar»)
+      const zTramo = Math.max(zEntero, Math.min((BANDA ? zWT * .5 : zW * VUELO.encuadre) / (ext.w * px1), zHT * (BANDA ? .8 : .95) / (ext.h * px1)));
       // Con zoom: a mitad del viaje se aleja (arco) para que se entienda el recorrido, y llega cerca del tramo nuevo
       const zMeta = cz * zEntero + (1 - cz) * (zTramo - (zTramo - zEntero) * VUELO.alejar * arco);
       const nuevoZ = mezclar(zc, zMeta, q ? 1 : 1 - Math.pow(.84, dt * 60)); if (Math.abs(nuevoZ - zc) > 1e-5) cambio = true; zc = nuevoZ;
       const s = cur.s * (1 + (zc - 1) * cur.park);
       grupo.scale.setScalar(s); grupo.position.set(0, 0, 0); grupo.updateMatrixWorld();
       const P = b.copy(foco).multiplyScalar(1 - cz).applyMatrix4(grupo.matrixWorld);
-      meta.set(((izqZ + derZ) / 2 - innerWidth / 2) * u, -((tope + piso) / 2 - innerHeight / 2) * u, 0);
+      const yCentro = cz * (tope + piso) / 2 + (1 - cz) * (topeT + (piso - topeT) * (BANDA ? .46 : .5));
+      meta.set(((izqZ + derZ) / 2 - innerWidth / 2) * u, -(yCentro - innerHeight / 2) * u, 0);
       grupo.position.set(cur.x + (meta.x - P.x - cur.x) * cur.park, cur.y + (meta.y - P.y - cur.y) * cur.park, 0); grupo.updateMatrixWorld();
     }
     // Funda de color: todas tenues con su color; la de la etapa activa sale como un rayo que la recorre y queda encendida.
