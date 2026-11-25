@@ -1456,4 +1456,33 @@ function lienzoVivo(cv, dibujar) {
   zona.addEventListener('pointerleave', () => capa.style.setProperty('--foco', 0));
 })();
 
+// ——— Cambios de sección (pedido del dueño, 24/11): pasar de una sección a otra no es un scroll plano. Cada cambio tiene su
+// propia animación, ligada al scroll (se puede ir y volver) y sin repetir: el nombre se abre para dejar pasar al ∞, Experiencia
+// se enciende como un monitor después de «Monitorear», el Proyecto se abre como ventana de navegador mientras Experiencia
+// queda atrás, Formación se da vuelta como una credencial, En vivo llega en semitono como una señal y Contacto sube como una
+// marea azul. Con movimiento reducido no corre nada y las secciones se ven enteras. ———
+(function cambios() {
+  const entran = $$('[data-cambio]'), salen = $$('[data-cambio-sale]'), visto = new Set();
+  entran.forEach(s => s.style.setProperty('--tono', s.dataset.tono));
+  const TONOS = { monitor: 1.9, ventana: 1.3, credencial: 1.1, semitono: 1.6, marea: .8 };
+  const fijar = (el, prop, v) => { const t = v.toFixed(3); if (el.style.getPropertyValue(prop) !== t) el.style.setProperty(prop, t); };
+  let pedido = false;
+  function medir() {
+    pedido = false;
+    const h = innerHeight, activo = !quieto();
+    raiz.toggleAttribute('data-cambios', activo);
+    if (!activo) return;
+    entran.forEach(s => {
+      const p = Math.min(1, Math.max(0, (h - s.getBoundingClientRect().top) / (h * .85)));
+      fijar(s, '--entra', p); s.toggleAttribute('data-adentro', p >= 1);
+      if (p >= 1 && !visto.has(s)) { visto.add(s); sonar('click', { tono: TONOS[s.dataset.cambio] || 1, vol: .12 }); }
+    });
+    // La portada se mide desde su borde de arriba (el nombre está arriba); las demás, desde el de abajo
+    salen.forEach(s => { const r = s.getBoundingClientRect(); fijar(s, '--sale', Math.min(1, Math.max(0, s.dataset.cambioSale === 'arriba' ? -r.top / (h * .5) : (h - r.bottom) / (h * .7)))); });
+  }
+  const pedir = () => { if (!pedido) { pedido = true; requestAnimationFrame(medir); } };
+  addEventListener('scroll', pedir, { passive: true }); addEventListener('resize', pedir); document.addEventListener('movimiento', pedir);
+  medir();
+})();
+
 aplicarIdioma();
