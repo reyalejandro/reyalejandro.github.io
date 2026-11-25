@@ -1399,3 +1399,27 @@ html[data-cambios] #contacto:not([data-adentro]) { clip-path:ellipse(90% calc((.
 
 @media print { [data-cambio], [data-cambio] > .envoltura { clip-path:none!important; -webkit-mask:none!important; mask:none!important; transform:none!important; opacity:1!important; background:none!important; }
   .poster .nombre > span { transform:none!important; opacity:1!important; } }
+
+/* Pipeline de Tsoft: la etapa cuyo gate acaba de cruzar el paquete late una vez con su color (pedido del dueño, 25/11) */
+.acto-etapa[data-gate] { animation:gate-pulso .8s var(--salida); }
+@keyframes gate-pulso { 0% { box-shadow:0 0 0 0 color-mix(in srgb,var(--c) 70%,transparent); scale:1; } 30% { scale:1.08; } 100% { box-shadow:0 0 0 14px transparent; scale:1; } }
+
+/* ——— Responsive (pedido del dueño, 25/11: «hacé todo web responsive») ——— */
+/* Barra de arriba entre 861 y 1180 px: no entraba y la hora se apretaba en una columna, encimada, y «CV en PDF» se cortaba.
+   Proyecto, Ciclo y Contacto quedan en ícono (el texto sigue para lectores) y nada se achica por debajo de su contenido. */
+.esquinas > span:first-child { flex:none; white-space:nowrap; }
+.controles > * { flex:none; }
+@media (min-width:861px) and (max-width:1180px) {
+  .esquinas nav .rueda { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+  .esquinas nav .pildora { padding-inline:6px; }
+}
+/* Datos clave: el tamaño sigue al ancho de su columna, así Inglés, Español y Base entran en una fila (en 1024–1280 la base
+   bajaba sola a una segunda fila y en 1280×720 quedaba cortada abajo) */
+.datos-clave { container-type:inline-size; }
+@media (min-width:601px) {
+  .dato { min-width:0; padding-inline:clamp(10px,3.4cqi,16px); }
+  .dato dd { font-size:clamp(1.2rem,6.4cqi,2.4rem); }
+  .dato.principal dd { font-size:clamp(1.9rem,10.5cqi,3rem); }
+}
+/* Correo del contacto: en pantallas táctiles el área para tocar medía 23–30 px de alto */
+@media (pointer:coarse) { .contacto .correo { display:inline-block; padding-block:8px; } }

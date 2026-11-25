@@ -836,6 +836,14 @@ if (matchMedia('(hover:hover) and (pointer:fine)').matches) {
     mostrar(0);
   });
   document.addEventListener('idioma', armar); // después de iconizar, así el detalle trae los íconos
+  // Pedido del dueño (25/11): en el pipeline de Tsoft, al pasar cada gate se enciende la etapa con el mismo número
+  const ETAPA_GATE = { codigo: 1, build: 2, pruebas: 3, nube: 5 };
+  document.addEventListener('gate', e => {
+    const acto = e.target.closest('[data-empresa]'), bts = acto ? $$('.acto-etapa', acto) : [];
+    const k = bts.findIndex(b => +b.dataset.i === ETAPA_GATE[e.detail]); if (k < 0) return;
+    acto.cvMostrar(k); sonar('click', { tono: 1.2 + k * .08, vol: .14 });
+    if (!quieto()) { bts[k].removeAttribute('data-gate'); void bts[k].offsetWidth; bts[k].toggleAttribute('data-gate', true); }
+  });
 })();
 
 // ——— Experiencia en diapositivas conectadas (pedido del dueño, 21/11: «Master Pet y Tsoft conectados como en diapositivas

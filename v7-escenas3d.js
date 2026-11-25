@@ -40,10 +40,48 @@ if (cajas.length) try {
     const escena = armar({ mundo, caja });
     if (escena.fov) camera.fov = escena.fov; // la vista del pipeline, en primera persona, pide un ángulo más abierto
     const etiquetas = [...caja.querySelectorAll('[data-ancla]')].map(el => ({ el, ancla: escena.anclas[el.dataset.ancla] })).filter(e => e.ancla);
-    let yaw = escena.yaw ?? -.62, pitch = escena.pitch ?? .62, metaYaw = yaw, extra = 0, mx = 0, my = 0, radio = escena.radio ?? 11;
+    let yaw = escena.yaw ?? -.62, pitch = escena.pitch ?? .62, metaYaw = yaw, extra = 0, mx = 0, my = 0, radio = escena.radio ?? 11, dist = 0;
     let sucio = true, enVista = false, corriendo = false, arr = null, antes = performance.now();
-    const medir = () => { const w = caja.clientWidth, h = caja.clientHeight; if (!w || !h) return; renderer.setPixelRatio(Math.min(devicePixelRatio || 1, innerWidth < 760 ? 1.25 : 1.5)); renderer.setSize(w, h, false); camera.aspect = w / h; radio = (escena.radio ?? 11) * Math.max(1, 1.45 / camera.aspect) * (innerWidth < 700 ? 1.3 : 1); camera.updateProjectionMatrix(); sucio = true; };
-    new ResizeObserver(medir).observe(caja); medir();
+    // Encuadre (pedido del dueño, 25/11: «se corta la imagen»): en las escenas que se giran, para cada ángulo del giro se
+    // calcula cuánto tiene que alejarse la cámara para que todos los modelos entren en el cuadro (con el leve movimiento del
+    // mouse). La vista de siempre queda grande y la cámara sólo se aleja cuando el giro lo pide.
+    const MIRA = escena.mira ?? new THREE.Vector3(0, .6, 0), puntos = [], cam2 = new THREE.PerspectiveCamera(), w3 = new THREE.Vector3();
+    if (escena.encuadrar) {
+      mundo.updateMatrixWorld(true);
+      // Vértices reales de los modelos (las cajas que los envuelven agrandaban de más lo que había que encuadrar), salteados
+      mundo.children.filter(o => o !== suelo && !o.isGridHelper && o.visible).forEach(o => o.traverse(m => {
+        const pos = m.isMesh && m.visible && m.geometry.attributes.position; if (!pos) return;
+        const paso = Math.max(1, Math.floor(pos.count / 60));
+        for (let i = 0; i < pos.count; i += paso) puntos.push(new THREE.Vector3().fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld));
+      }));
+    }
+    const GIROS = 36, radios = [];
+    const cabe = (r, yw) => {
+      for (const dp of [-.08, .08]) {
+        const pt = (escena.pitch ?? .62) + dp;
+        cam2.position.set(Math.sin(yw) * Math.cos(pt) * r, Math.sin(pt) * r, Math.cos(yw) * Math.cos(pt) * r).add(MIRA); cam2.lookAt(MIRA); cam2.updateMatrixWorld();
+        for (const q of puntos) { w3.copy(q).project(cam2); if (Math.abs(w3.x) > .95 || Math.abs(w3.y) > .9) return false; }
+      }
+      return true;
+    };
+    // Cada ángulo se calcula recién cuando la cámara pasa por ahí (calcular la tabla entera al cargar sumaba ~250 ms)
+    const radioEn = a => {
+      if (radios[a] === undefined) {
+        const yw = a / GIROS * Math.PI * 2; let lo = radio, hi = radio * 3;
+        if (cabe(lo, yw)) hi = lo; else for (let k = 0; k < 9; k++) { const m = (lo + hi) / 2; if (cabe(m, yw)) hi = m; else lo = m; }
+        radios[a] = hi;
+      }
+      return radios[a];
+    };
+    const medir = () => {
+      const w = caja.clientWidth, h = caja.clientHeight; if (!w || !h) return;
+      renderer.setPixelRatio(Math.min(devicePixelRatio || 1, innerWidth < 760 ? 1.25 : 1.5)); renderer.setSize(w, h, false); camera.aspect = w / h;
+      // Con encuadre, la distancia la decide el encuadre (el alejamiento fijo para pantallas angostas dejaba el modelo chico)
+      radio = (escena.radio ?? 11) * (puntos.length ? 1 : Math.max(1, 1.45 / camera.aspect) * (innerWidth < 700 ? 1.3 : 1)); camera.updateProjectionMatrix();
+      if (puntos.length) { cam2.fov = camera.fov; cam2.aspect = camera.aspect; cam2.updateProjectionMatrix(); radios.length = 0; }
+      etiquetas.forEach(e => { e.medio = undefined; }); sucio = true;
+    };
+    new ResizeObserver(medir).observe(caja); medir(); document.addEventListener('idioma', () => { etiquetas.forEach(e => { e.medio = undefined; }); sucio = true; });
     caja.addEventListener('pointermove', e => { const r = caja.getBoundingClientRect(); mx = (e.clientX - r.left) / r.width * 2 - 1; my = (e.clientY - r.top) / r.height * 2 - 1; if (arr) { extra = arr.extra + (e.clientX - arr.x) * .008; } sucio = true; arrancar(); });
     caja.addEventListener('pointerleave', () => { mx = my = 0; arrancar(); });
     caja.addEventListener('pointerdown', e => { if (e.button || e.target.closest('button')) return; arr = { x: e.clientX, extra }; caja.setPointerCapture(e.pointerId); caja.toggleAttribute('data-arrastrando', true); });
@@ -52,9 +90,13 @@ if (cajas.length) try {
     const v = new THREE.Vector3();
     function ubicarEtiquetas() {
       const w = caja.clientWidth, h = caja.clientHeight;
-      for (const { el, ancla } of etiquetas) {
+      for (const e of etiquetas) {
+        const { el, ancla } = e;
         (ancla.isVector3 ? v.copy(ancla) : ancla.getWorldPosition(v)).project(camera);
-        el.style.setProperty('--x', ((v.x + 1) / 2 * w).toFixed(1) + 'px'); el.style.setProperty('--y', ((1 - v.y) / 2 * h).toFixed(1) + 'px');
+        // Que la etiqueta no se salga por los costados de la escena (en el celular se cortaban las de las puntas)
+        e.medio ??= el.offsetWidth / 2 + 4;
+        const x = Math.min(w - e.medio, Math.max(e.medio, (v.x + 1) / 2 * w));
+        el.style.setProperty('--x', x.toFixed(1) + 'px'); el.style.setProperty('--y', ((1 - v.y) / 2 * h).toFixed(1) + 'px');
       }
     }
     function cuadro(ahora) {
@@ -64,10 +106,14 @@ if (cajas.length) try {
       metaYaw = (escena.yaw ?? -.62) + extra + (q ? 0 : mx * .18);
       const metaPitch = (escena.pitch ?? .62) + (q ? 0 : -my * .08);
       const dy = metaYaw - yaw, dp = metaPitch - pitch; yaw += dy * k; pitch += dp * k;
-      camera.position.set(Math.sin(yaw) * Math.cos(pitch) * radio, Math.sin(pitch) * radio, Math.cos(yaw) * Math.cos(pitch) * radio).add(escena.mira ?? v.set(0, .6, 0));
-      camera.lookAt(escena.mira ?? v.set(0, .6, 0));
+      // Distancia: la del ángulo actual según la tabla del encuadre (interpolada), alcanzada con suavidad
+      let metaDist = radio;
+      if (puntos.length) { const f = ((yaw / (Math.PI * 2)) % 1 + 1) % 1 * GIROS, i = Math.floor(f) % GIROS, r0 = radioEn(i); metaDist = r0 + (radioEn((i + 1) % GIROS) - r0) * (f - Math.floor(f)); }
+      const dd = metaDist - dist; dist = dist && !q ? dist + dd * .1 : metaDist;
+      camera.position.set(Math.sin(yaw) * Math.cos(pitch) * dist, Math.sin(pitch) * dist, Math.cos(yaw) * Math.cos(pitch) * dist).add(MIRA);
+      camera.lookAt(MIRA);
       const anima = escena.tic ? escena.tic(ahora, dt, q) : false;
-      if (sucio || anima || Math.abs(dy) + Math.abs(dp) > 1e-4) { renderer.render(scene, camera); ubicarEtiquetas(); sucio = false; }
+      if (sucio || anima || Math.abs(dy) + Math.abs(dp) + Math.abs(dd) * .01 > 1e-4) { renderer.render(scene, camera); ubicarEtiquetas(); sucio = false; }
       requestAnimationFrame(cuadro);
     }
     function arrancar() { if (corriendo || !enVista) return; corriendo = true; antes = performance.now(); requestAnimationFrame(cuadro); }
@@ -148,7 +194,7 @@ if (cajas.length) try {
     const leer = () => { const b = caja.querySelector('.etq3d[data-activo]'); if (b) { activo = b.dataset.nodo; escenaArq.despertar?.(); } };
     new MutationObserver(leer).observe(caja.querySelector('.etiquetas3d'), { attributes: true, subtree: true, attributeFilter: ['data-activo'] });
     const escenaArq = {
-      anclas, tocables, radio: 13.4, yaw: -.68, pitch: .62, mira: new THREE.Vector3(0, .55, 0),
+      anclas, tocables, encuadrar: true, radio: 13.4, yaw: -.68, pitch: .62, mira: new THREE.Vector3(0, .55, 0),
       tic(ahora, dt, q) {
         let anima = !q; const t = ahora / 1000;
         for (const [clave, g] of Object.entries(nodos)) {
@@ -202,7 +248,7 @@ if (cajas.length) try {
     const reiniciar = () => { t0 = null; terminado = false; unidad.position.set(0, 1.18, .8); unidad.visible = true; pedidos.forEach(p => { p.visible = false; }); pintarPantalla(A, ''); pintarPantalla(B, ''); car.removeAttribute('data-stock0'); };
     const final = () => { terminado = true; unidad.visible = false; pedidos.forEach(p => { p.visible = false; }); pintarPantalla(A, 'ok'); pintarPantalla(B, 'no'); car.toggleAttribute('data-stock0', true); };
     const escena = {
-      anclas, radio: 8.6, yaw: -.18, pitch: .42, mira: new THREE.Vector3(0, .75, 0),
+      anclas, encuadrar: true, radio: 8.6, yaw: -.18, pitch: .42, mira: new THREE.Vector3(0, .75, 0),
       tic(ahora, dt, q) {
         if (t0 === null) return false;
         if (q) { if (!terminado) final(); return false; }
@@ -221,7 +267,7 @@ if (cajas.length) try {
 
   // ——— Pipeline de Tsoft (pedido del dueño, boceto «rueda de mouse para abajo = se mueve la cinta»): vista desde atrás del
   // paquete, que va en primer plano sobre la cinta. Al bajar con la rueda la cinta avanza y el paquete pasa por debajo de
-  // cada gate (01 Código, 02 Build, 03 Pruebas, 04 Nube), con su cartel arriba. Al cruzar uno, su cortina de luz destella,
+  // cada gate (02 Código, 03 Build, 04 Pruebas, 06 Deploy: los números de sus etapas del ciclo), con su cartel arriba. Al cruzar uno, su cortina de luz destella,
   // el cartel se enciende y el paquete cambia: crudo → compilado → probado (verde) → en la nube (azul). ———
   const pipe = document.querySelector('[data-escena="pipeline"]');
   if (pipe) motor(pipe, ({ mundo, caja }) => {
@@ -258,12 +304,12 @@ if (cajas.length) try {
     const cuerpo = new THREE.Mesh(caja3(.62, .52, .62, .05), estados[0]); paquete.add(cuerpo);
     const cinta = new THREE.Mesh(caja3(.64, .53, .12, .02), M.cinta()); paquete.add(cinta);
     const carteles = CLAVES.map(c => caja.querySelector(`[data-ancla="${c}"]`));
-    let prog = 0, meta = 0, t = 0, estado = -1;
+    let prog = 0, meta = 0, t = 0, estado = -1, gateActivo = null;
     // En Experiencia en diapositivas el paso marca el progreso (data-progreso); si no, la posición de la escena en pantalla
-    const objetivo = () => { if (caja.dataset.progreso !== undefined) return +caja.dataset.progreso; const r = caja.getBoundingClientRect(), H = innerHeight; return Math.min(1, Math.max(0, (H * .9 - r.top) / (H * .78))); };
+    const objetivo = () => { if (caja.dataset.progreso !== undefined) return +caja.dataset.progreso; const r = caja.getBoundingClientRect(), H = innerHeight; if (!r.height) return 0; /* oculta: medía 0 y arrancaba al final */ return Math.min(1, Math.max(0, (H * .9 - r.top) / (H * .78))); };
     const colocar = () => {
       corre.position.z = prog * viaje;
-      let pasados = 0;
+      let pasados = 0, cerca = null;
       gates.forEach(({ g, cortina, tira }, k) => {
         const z = g.position.z + corre.position.z; // dónde está el gate respecto del paquete (0 = encima)
         if (z > 0) pasados = k + 1;
@@ -273,7 +319,10 @@ if (cajas.length) try {
         // Sólo el cartel del próximo gate (los lejanos se apilaban en el horizonte); se va al pasar por encima del paquete
         const ver = z > -GAP * 1.05 && z < .6; el.style.opacity = ver ? Math.min(1, (.6 - z) * 2, (z + GAP * 1.05) * 1.2).toFixed(2) : '0';
         el.toggleAttribute('data-activo', z > -GAP * .55 && z < .9);
+        if (cerca === null && z > -.35 && z < .9) cerca = CLAVES[k];
       });
+      // Al cruzar un gate se enciende su etapa en los botones de al lado (v7.js escucha «gate»)
+      if (cerca !== gateActivo) { gateActivo = cerca; if (cerca) caja.dispatchEvent(new CustomEvent('gate', { bubbles: true, detail: cerca })); }
       const nuevo = Math.max(0, pasados - 1);
       if (nuevo !== estado) { estado = nuevo; cuerpo.material = estados[pasados ? nuevo : 0]; }
       paquete.position.y = .7 + Math.sin(t * 2.2) * .015; paquete.rotation.y = Math.sin(t * .9) * .05;
