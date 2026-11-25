@@ -1423,3 +1423,11 @@ html[data-cambios] #contacto:not([data-adentro]) { clip-path:ellipse(90% calc((.
 }
 /* Correo del contacto: en pantallas táctiles el área para tocar medía 23–30 px de alto */
 @media (pointer:coarse) { .contacto .correo { display:inline-block; padding-block:8px; } }
+
+/* ——— Ciclo en el celular (25/11): las herramientas van al pie del panel, justo arriba del ∞, para que los haces del tramo
+   lleguen a ellas sin cruzar el texto (en escritorio son etiquetas sueltas alrededor del ∞) ——— */
+@media (max-width:860px) {
+  html[data-vivo] .tray-pasos > li { display:flex; flex-direction:column; }
+  html[data-vivo] .tray-pasos > li > * { flex:none; }
+  html[data-vivo] .tray-pasos .herramientas { order:1; margin-top:12px; }
+}

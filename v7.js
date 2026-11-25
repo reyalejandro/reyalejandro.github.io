@@ -833,9 +833,21 @@ if (matchMedia('(hover:hover) and (pointer:fine)').matches) {
     });
     // Las diapositivas de Experiencia llevan la etapa elegida de una empresa a la otra
     acto.cvMostrar = mostrar; acto.cvIndice = () => elegida;
-    mostrar(0);
+    // Fuera de las diapositivas, la escena 3D va debajo del detalle y la cinta avanza según dónde está en pantalla: si el
+    // detalle cambiaba de alto al encenderse otra etapa, la escena saltaba, la cinta se movía de golpe y el gate se repetía
+    // (dueño, 25/11: «el paquete está bugeado cuando se sube y baja en mobile»). El detalle reserva el alto del texto más largo.
+    acto.cvAlto = () => {
+      detalle.style.minHeight = '';
+      if (acto.closest('[data-exp-activo]')) return;
+      let max = 0; for (const x of items) { detalle.innerHTML = x.texto; max = Math.max(max, detalle.offsetHeight); }
+      detalle.style.minHeight = max + 'px'; detalle.innerHTML = items[elegida].texto;
+    };
+    mostrar(0); acto.cvAlto();
   });
   document.addEventListener('idioma', armar); // después de iconizar, así el detalle trae los íconos
+  let altoPedido = 0;
+  const altos = () => { cancelAnimationFrame(altoPedido); altoPedido = requestAnimationFrame(() => $$('[data-empresa]').forEach(a => a.cvAlto?.())); };
+  addEventListener('resize', altos); document.fonts?.ready.then(altos); // con la fuente cargada el texto más largo crece
   // Pedido del dueño (25/11): en el pipeline de Tsoft, al pasar cada gate se enciende la etapa con el mismo número
   const ETAPA_GATE = { codigo: 1, build: 2, pruebas: 3, nube: 5 };
   document.addEventListener('gate', e => {

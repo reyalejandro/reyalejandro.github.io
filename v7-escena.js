@@ -57,7 +57,8 @@ try {
 
   // ——— Rayos con contenido: cuando una etapa se activa, de su tramo salen haces de su color que terminan en sus herramientas
   // (con ícono) y en sus metodologías y prácticas. Las etiquetas se acomodan alrededor del ∞ sin pisarse ni invadir el panel;
-  // al pasar el mouse marcan la frase donde se usaron y un toque la fija. En el celular no hay lugar: siguen en el panel. ———
+  // al pasar el mouse marcan la frase donde se usaron y un toque la fija. En el celular no hay lugar para etiquetas sueltas:
+  // las herramientas quedan al pie del panel, justo arriba del ∞, y los haces suben del tramo a cada una (pedido del dueño, 25/11). ———
   let forzar = true, rayosLimpio = true, rayosDibujo = 0, tCambio = 0;
   const pantalla = (p, salida) => { p.applyMatrix4(grupo.matrixWorld).project(camera); salida.x = (p.x + 1) / 2 * innerWidth; salida.y = (1 - p.y) / 2 * innerHeight; return salida; };
   const pRayo = new THREE.Vector3(), c2 = { x: 0, y: 0 };
@@ -160,23 +161,43 @@ try {
     }
     return true;
   }
+  // Celular: un haz del tramo a cada herramienta del panel; termina en el borde de abajo del chip y crece en cascada
+  const haces = [], cajasChips = [];
+  function ubicarChips(ahora) {
+    const fuerza = cur.park * cur.o, chips = enDesktop() || fuerza <= .3 ? [] : [...(pasosLi[activa]?.querySelectorAll('.herramientas li') || [])];
+    haces.length = cajasChips.length = 0; if (!chips.length) return haces;
+    const muestras = []; for (let m = 0; m <= 12; m++) { const q = { x: 0, y: 0 }; pantalla(puntoPieza(activa, m / 12, pRayo), q); muestras.push(q); }
+    const vivo = !quieto();
+    chips.forEach((c, k) => {
+      const r = c.getBoundingClientRect(); if (!r.width) return; cajasChips.push(r);
+      const fx = r.left + r.width / 2, fy = r.bottom - 3;
+      let mejor = muestras[0], dmin = Infinity;
+      for (const q of muestras) { if (q.usado) continue; const d = Math.hypot(q.x - fx, q.y - fy); if (d < dmin) { dmin = d; mejor = q; } }
+      mejor.usado = chips.length <= muestras.length;
+      const p = vivo ? Math.min(1, Math.max(0, (ahora - tCambio - 250 - k * 45) / 520)) : 1, s = 1 - (1 - p) ** 3;
+      haces.push({ ax: mejor.x, ay: mejor.y, fx: mejor.x + (fx - mejor.x) * s, fy: mejor.y + (fy - mejor.y) * s, p: s });
+    });
+    return haces;
+  }
   function dibujarRayos(ahora) {
-    const hay = ubicarEtiquetas(ahora);
+    const hay = ubicarEtiquetas(ahora) ? etiquetas : ubicarChips(ahora).length ? haces : null;
     if (!hay) { if (!rayosLimpio) { rctx.clearRect(0, 0, lienzoRayos.width, lienzoRayos.height); rayosLimpio = true; } return; }
     if (ahora - rayosDibujo < 33) return; rayosDibujo = ahora; rayosLimpio = false;
     const dpr = lienzoRayos.width / innerWidth, col = ESPECTRO[activa], rgb = `${col >> 16 & 255},${col >> 8 & 255},${col & 255}`;
     rctx.setTransform(dpr, 0, 0, dpr, 0, 0); rctx.clearRect(0, 0, innerWidth, innerHeight);
     rctx.globalCompositeOperation = 'lighter'; rctx.lineCap = 'round';
     const fuerza = cur.park * cur.o;
-    for (const e of etiquetas) {
+    for (const e of hay) {
       if (!e.p) continue;
-      const fx = e.px + e.w / 2, fy = e.py + e.h / 2;
+      const fx = e.fx ?? e.px + e.w / 2, fy = e.fy ?? e.py + e.h / 2;
       // Haz: más ancho y tenue en el ∞, fino y firme al llegar a la etiqueta
       const g = rctx.createLinearGradient(e.ax, e.ay, fx, fy);
       g.addColorStop(0, `rgba(${rgb},${(.9 * fuerza).toFixed(3)})`); g.addColorStop(1, `rgba(${rgb},${(.35 * fuerza * e.p).toFixed(3)})`);
       for (const [ancho, alfa] of [[7, .14], [1.4, 1]]) { rctx.globalAlpha = alfa; rctx.strokeStyle = g; rctx.lineWidth = ancho; rctx.beginPath(); rctx.moveTo(e.ax, e.ay); rctx.lineTo(fx, fy); rctx.stroke(); }
       rctx.globalAlpha = 1; rctx.fillStyle = `rgba(${rgb},${fuerza.toFixed(3)})`; rctx.beginPath(); rctx.arc(e.ax, e.ay, 2.6, 0, 7); rctx.fill();
     }
+    // Celular: el lienzo va encima de la sección; se borran los haces donde hay un chip para que no crucen los de abajo
+    if (hay === haces) { rctx.globalCompositeOperation = 'destination-out'; rctx.beginPath(); for (const r of cajasChips) rctx.roundRect(r.left, r.top, r.width, r.height, 8); rctx.fill(); }
   }
   const azulCuenta = new THREE.Color(0x3d68ff), azulBrillo = new THREE.Color(0x1b3cff), tono = new THREE.Color();
 
